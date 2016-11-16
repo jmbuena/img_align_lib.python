@@ -1,5 +1,14 @@
 A python reimplementation of the C++ image alignment library
 
+Test library now:
+=================
+
+Pull code from the repository and run:
+'
+$ cd img_alig_lib.python/code
+$ python inv_comp.py --video_source='../videos/book1.mp4' --template_corners 106 166 106 69 211 69 211 166 --template_dims 100 100
+'
+
 Incremental Image Alignment Library
 ===================================
 
