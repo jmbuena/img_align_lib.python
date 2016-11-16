@@ -21,14 +21,14 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
     problem jacobian J, is constant.
     """
 
-    def __init__(self, object_model, motion_model):
+    def __init__(self, object_model, motion_model, show_debug_info=False):
         """
 
         :param object_model:
         :param motion_model:
         :return:
         """
-        super(Homography2DInvCompProblem, self).__init__(object_model, motion_model)
+        super(Homography2DInvCompProblem, self).__init__(object_model, motion_model, show_debug_info)
 
         return
 
@@ -53,7 +53,7 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
 
         return cost
 
-    def computeResidual(self, image, motion_params, show_debug_info=False):
+    def computeResidual(self, image, motion_params):
         """
 
         :param image: OpenCV np array image.
@@ -69,7 +69,7 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
         template_coords = self.getObjectModel().getReferenceCoords()
         warped_image = self.getMotionModel().warpImage(image, motion_params, template_coords)
 
-        if show_debug_info:
+        if self.show_debug_info:
             print "template_coords=", template_coords
             print "warped_image.shape=", warped_image.shape
             cv2.imshow('Warped Image original', warped_image)
@@ -83,9 +83,9 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
         features_vector = self.getObjectModel().extractFeaturesFromWarpedImage(warped_image_gray)
         template_features_vector = self.getObjectModel().computeTemplateFeatures(motion_params)
 
-        if show_debug_info:
-            I_warped = np.reshape(features_vector, warped_image.shape)
-            I_template = np.reshape(template_features_vector, warped_image.shape)
+        if self.show_debug_info:
+            I_warped = np.uint8(np.reshape(features_vector, warped_image.shape))
+            I_template = np.uint8(np.reshape(template_features_vector, warped_image.shape))
             cv2.imshow('features_vector reshaped', I_warped)
             cv2.imshow('template_features_vector reshaped', I_template)
 
@@ -99,7 +99,7 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
 
         residual = np.float64(features_vector) - np.float64(template_features_vector)
 
-        if show_debug_info:
+        if self.show_debug_info:
             I_residual = np.reshape(residual, warped_image.shape)
             max_residual = np.max(I_residual)
             min_residual = np.min(I_residual)
@@ -143,9 +143,6 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
         mJ = np.zeros((template_coords.shape[0], self.getMotionModel().getNumParams()), dtype=np.float64)
         zero_params = np.zeros(self.getMotionModel().getNumParams())
         gradients = self.getObjectModel().computeTemplateFeaturesGradient()
-
-        print gradients.shape
-        print template_coords.shape
 
         gxy = -((gradients[:, 0] * template_coords[:, 0]) + (gradients[:, 1] * template_coords[:, 1]))
 

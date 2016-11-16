@@ -24,14 +24,14 @@ class InverseCompositionalProblem(OptimizationProblem):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, object_model, motion_model):
+    def __init__(self, object_model, motion_model, show_debug_info=False):
         """
 
         :param object_model:
         :param motion_model:
         :return:
         """
-        super(InverseCompositionalProblem, self).__init__(object_model, motion_model)
+        super(InverseCompositionalProblem, self).__init__(object_model, motion_model, show_debug_info)
 
         self.__initialized = False
         self.__J = None

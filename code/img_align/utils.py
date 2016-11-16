@@ -37,9 +37,6 @@ def computeGrayImageGradients(image):
     rows = gray_image.shape[0]
     cols = gray_image.shape[1]
     num_pixels = rows * cols
-    print cols
-    print rows
-    print num_pixels
     gradients  = np.zeros((num_pixels, 2), dtype=np.float64)
 
     grad_x = cv2.sepFilter2D(gray_image, cv2.CV_32F, np.array(DoG), np.array(G).T)
@@ -48,7 +45,7 @@ def computeGrayImageGradients(image):
     gradients[:,0] = np.reshape(grad_x, (num_pixels, 1)).T
     gradients[:,1] = np.reshape(grad_y, (num_pixels, 1)).T
 
-    return gradients
+    return np.float64(gradients)
 
 
 def computeGrayImageHessians(image):
@@ -102,4 +99,4 @@ def computeGrayImageHessians(image):
     hessians[:,1] = grad_xy[:]
     hessians[:,3] = grad_yy[:]
 
-    return hessians
+    return np.float64(hessians)

@@ -46,8 +46,8 @@ class SingleImageModel(ObjectModel):
         if self.__equalize:
             self.__image = cv2.equalizeHist(self.__image)
 
-        self.__gradients = computeGrayImageGradients(self.__image)
-        self.__gray_levels = np.copy(self.__image.reshape(num_pixels, 1))
+        self.__gradients = np.float64(computeGrayImageGradients(self.__image))
+        self.__gray_levels = np.float64(self.__image.reshape(num_pixels, 1))
         self.__coordinates = self.__computeTemplateCoordinates(self.__image)
 
         self.__control_points_indices = []
@@ -98,7 +98,7 @@ class SingleImageModel(ObjectModel):
         else:
             warped_image_vector = np.copy(warped_image.reshape(num_pixels, 1))
 
-        return warped_image_vector
+        return np.float64(warped_image_vector)
 
     def computeTemplateFeatures(self, object_params):
         """

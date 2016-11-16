@@ -17,7 +17,7 @@ class OptimizationProblem:
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, object_model, motion_model):
+    def __init__(self, object_model, motion_model, show_debug_info=False):
         """
 
         :param object_model:
@@ -26,6 +26,7 @@ class OptimizationProblem:
         """
         self.__object_model = object_model
         self.__motion_model = motion_model
+        self.show_debug_info = show_debug_info
         return
 
     @abc.abstractmethod
