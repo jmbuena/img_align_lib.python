@@ -1,4 +1,5 @@
 
+import argparse
 import cv2
 import numpy as np
 import math
@@ -58,8 +59,83 @@ def on_mouse_event(event, x, y, flags, frame):
             cv2.circle(copy_frame,template_points[i],5,(0,0,255),-1)
         cv2.imshow("image", copy_frame)
 
+def warpImageWithPerspective(image, template_dims, points):
+    template_width = template_dims[0]
+    template_height = template_dims[1]
 
-def getTemplateImgHomography(template_width, template_height):
+    # The template is a rectangular image
+    src = np.array([[0, 0],
+                    [template_width, 0],
+                    [template_width, template_height],
+                    [0, template_height]],
+                    dtype=np.float32)
+    dst = np.array([[points[0][0], points[0][1]],
+                    [points[1][0], points[1][1]],
+                    [points[2][0], points[2][1]],
+                    [points[3][0], points[3][1]]],
+                    dtype=np.float32)
+
+    H = cv2.getPerspectiveTransform(src, dst)
+    template_img = cv2.warpPerspective(image, H, (template_width, template_height),
+                                       flags=cv2.INTER_AREA | cv2.WARP_INVERSE_MAP)
+
+    cv2.namedWindow('template')
+    cv2.imshow('template', template_img)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
+    # The template center point should be the (0,0). Therefore we need to
+    # correct the homography H in order to be the right one.
+    TR = np.array([[1., 0., template_width/2.],
+                   [0., 1., template_height/2.],
+                   [0., 0., 1.]])
+    H2 = np.dot(H, TR) - np.eye(3,3)
+    initial_params = np.copy(np.reshape(H2.T,(9,1)))
+
+    return (template_img, initial_params)
+
+def getCommandLineTemplateImg(template_dims, coords, video_source):
+    """
+    Capture first image and get the template image from it:
+       - Click on 4 corners of a rectangle (can be moved with mouse):
+           * Point 0 should be top-left corner
+           * Point 1 should be top-right corner
+           * Point 2 should be lower-right corner
+           * Point 3 should be lower-left corner
+
+       - If the frame is not a nice one ... type 'n' key to get next frame
+       - Any other key gets the warped template in shape=(template_img_height, template_img_width)
+    :param template_width:
+    :param template_height:
+    :return:
+    """
+    video_capture = cv2.VideoCapture(video_source)
+    cv2.namedWindow('image')
+    gray = None
+    ret, frame = video_capture.read()
+    if (frame is not None):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    else:
+        print "Error in capture"
+        exit()
+
+    copy_frame = np.copy(frame)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    for i in range(len(coords)):
+        point = (int(coords[i][0]), int(coords[i][1]))
+        cv2.circle(copy_frame, point, 5, (0,0,255), -1)
+        cv2.putText(copy_frame, str(i), point, font, 1, (255,255,255), 2)
+    cv2.imshow("image", copy_frame)
+
+    cv2.waitKey()
+
+    if gray is None:
+        print "Error, gray image is None"
+
+    return warpImageWithPerspective(gray, template_dims, coords)
+
+
+def getInteractiveTemplateImg(template_dims, video_source):
     """
     Capture first image and get the template image from it:
        - Click on 4 corners of a rectangle (can be moved with mouse):
@@ -75,7 +151,11 @@ def getTemplateImgHomography(template_width, template_height):
     :return:
     """
 
-    video_capture = cv2.VideoCapture(0)
+    print "\n***PLEASE***, Clisk 4 corners of the template in clockwise sense, points: 0, 1, 2, and 3\n"
+    print "Points **CAN BE MOVED**\n"
+    print "IF you have to capture another frame or advance in a video, press key 'n' or any key with \n"
+    print "less than 4 points\n\n"
+    video_capture = cv2.VideoCapture(video_source)
     cv2.namedWindow('image')
     gray = None
     while True:
@@ -96,52 +176,27 @@ def getTemplateImgHomography(template_width, template_height):
     if gray is None:
         print "Error, gray image is None"
 
+    return warpImageWithPerspective(gray, template_dims, template_points)
 
-    # The template is a rectangular image
-    src = np.array([[0, 0],
-                    [template_width, 0],
-                    [template_width, template_height],
-                    [0, template_height]],
-                    dtype=np.float32)
-    dst = np.array([[template_points[0][0], template_points[0][1]],
-                    [template_points[1][0], template_points[1][1]],
-                    [template_points[2][0], template_points[2][1]],
-                    [template_points[3][0], template_points[3][1]]],
-                    dtype=np.float32)
+def main(args):
 
-    H = cv2.getPerspectiveTransform(src, dst)
-    template_img = cv2.warpPerspective(gray, H, (template_width, template_height),
-                                       flags=cv2.INTER_AREA | cv2.WARP_INVERSE_MAP)
+    video_source = args.video_source
+    if args.video_source is None:
+        video_source = 0
 
-    cv2.namedWindow('template')
-    cv2.imshow('template', template_img)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    template_dims = [int(args.template_dims[0]), int(args.template_dims[1])]
+    if args.template_corners is None:
+        global template_points
+        template_img, params = getInteractiveTemplateImg(template_dims, video_source)
+    else:
+        template_points = np.array(args.template_corners).reshape((4,2))
+        template_img, params = getCommandLineTemplateImg(template_dims, template_points, video_source)
 
-    # The template center point should be the (0,0). Therefore we need to
-    # correct the homography H in order to be the right one.
-    TR = np.array([[1., 0., template_width/2.],
-                   [0., 1., template_height/2.],
-                   [0., 0., 1.]])
-    H2 = np.dot(H, TR) - np.eye(3,3)
-    initial_params = np.copy(np.reshape(H2.T,(9,1)))
-
-    return (template_img, initial_params)
-
-
-def main():
-
-    # Setup template dimensions after warping back from the first image of the sequence.
-    template_img_width  = 100
-    template_img_height = 200
-    global template_points
-
-    template_img, params = getTemplateImgHomography(template_img_width, template_img_height)
 
     # Setup the optimization problem: object model, motion model and Optimizer
     motion_model = Homography2DInvComp()
     object_model = SingleImageModel(template_img, equalize=True)
-    optim_problem = Homography2DInvCompProblem(object_model, motion_model)
+    optim_problem = Homography2DInvCompProblem(object_model, motion_model, show_debug_info=False)
     optim = GaussNewtonOptimizer(optim_problem, max_iter=20, show_iter=False)
 
     # Setup the tracker that uses a pyramid to track fast motion.
@@ -149,7 +204,7 @@ def main():
     tracker.setMotionParams(params)
 
     cv2.namedWindow('Video')
-    video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture(video_source)
     while True:
         # Capture frame-by-frame
         ret, frame = video_capture.read()
@@ -169,4 +224,17 @@ def main():
     cv2.destroyAllWindows()
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Inverse Compositional tracking with gray levels test script.')
+    parser.add_argument('--video_source', dest='video_source', action='store',
+                        help='Video source in OpenCV format (default: 0)')
+    parser.add_argument('--template_corners', dest='template_corners', nargs=8,
+                        help='template corners list in "x0 y0 x1 y1 x2 y2 x3 y3" format, without quotes (default: [])')
+    parser.add_argument('--template_dims', dest='template_dims', nargs=2,
+                        default=[200, 100],
+                        help='template dims list in "width height" format, without quotes (default: [200, 100])')
+
+    args = parser.parse_args()
+
+    main(args)
