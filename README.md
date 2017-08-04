@@ -16,9 +16,9 @@ This is a library of incremental image alingment algorithms using python 2.7 and
 
 Incremental Image alingment is used in tracking applications. In this applications you find the
 pose of the object in the scene by any means (i.e. object detection) and subsquently the pose
-is reestimated in the current frame using the pose in the former frame. In order to motion
-estimation to be possible a motion model of the object is assumed. Therefore, in this context
-pose stands for motion parameters for a given motion model.
+is reestimated in the current frame using the pose in the former frame. In order to
+estimate motion, a model of the displacement of the object is assumed. Therefore, in this context
+pose stands for the motion parameters.
 
 The elements of any incremental image alignment are:
 
@@ -26,7 +26,7 @@ The elements of any incremental image alignment are:
   * The motion model (2D similarity, 2D affine, 2D homography, 3D pose (rotation and traslation), etc).
   * The optimisation procedure (Gauss-Newton, Levenberg–Marquardt, etc).
 
-Those elements are provided in the library and also an Object Oriented design that allows to easily introduce
+Those elements are provided in the library and also an Object Oriented Design that allows to easily introduce
 efficient technicques for incremental image alignment:
 
   * Hager and Belhumeur's jacobian factorisation method::
@@ -41,7 +41,7 @@ efficient technicques for incremental image alignment:
         Simon Baker, Iain Matthews
         International Journal of Computer Vision 56(3), 221–255, 2004
 
-The img_aling_lib.python lready provides:
+The img_aling_lib.python already provides:
 
   * Image Compositional for planar tracking (with a single texture object model) with
     homography based motion model.
