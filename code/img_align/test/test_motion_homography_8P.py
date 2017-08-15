@@ -68,6 +68,9 @@ class TestMotionHomography8P(unittest.TestCase):
         comp_params_gt = np.array([1, 0, 0, 0, 1, 0, 0, 0])
         self.assertTrue(np.linalg.norm(comp_params - comp_params_gt) < 1.0e-10)
 
+    def test_computeJacobian(self):
+        return
+
     def test_scaleParams(self):
         params = np.array([1, 0, 0, 0, 1, 0, 0, 0])
         params_scaled = self.motion.scaleParams(params, 3.0)

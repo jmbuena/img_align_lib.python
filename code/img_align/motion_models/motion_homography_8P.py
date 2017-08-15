@@ -136,7 +136,7 @@ class MotionHomography8P(MotionModel):
         return composition_params[:,0:8]
 
 
-    def compute_jacobian(self, coords, motion_params):
+    def computeJacobian(self, coords, motion_params):
         """
         Let f(c, p) the motion model function, with motion parameters p, that
         transforms coordinates c (2 dimensions). This method computes the first derivative
