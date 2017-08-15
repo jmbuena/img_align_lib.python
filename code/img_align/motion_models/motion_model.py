@@ -54,6 +54,55 @@ class MotionModel:
         """
         return
 
+    @abc.abstractmethod
+    def getCompositionParams(self, motion_params1, motion_params2):
+        """
+        Let f(x, p) the motion model function, with motion parameters p, that
+        transforms coordinates x. This method computes the motion model params such as:
+            f(x, composition_params) =  f(f(x, motion_params1), motion_params2)
+
+        :param motion_params1: motion params for f(x, motion_params1).
+        :param motion_params2: motion params for second application of f.
+        :return: np array with the updated motion parameters.
+        """
+        return
+
+    @abc.abstractmethod
+    def getCompositionWithInverseParams(self, motion_params1, motion_params2):
+        """
+        Let f(x, p) the motion model function, with motion parameters p, that
+        transforms coordinates x. This method computes the motion model params such as:
+            f(x, composition_params) =  f(f^{-1}(x, motion_params1), motion_params2)
+
+        :param motion_params1: motion params for f^{-1}(x, motion_params1).
+        :param motion_params2: motion params for second application of f.
+        :return: np array with the updated motion parameters.
+        """
+        return
+
+    @abc.abstractmethod
+    def compute_jacobian(self, coords, motion_params):
+        """
+        Let f(x, p) the motion model function, with motion parameters p, that
+        transforms coordinates x. This method computes the first derivative for the motion
+        model, at given coordinates and with given motion params.
+
+        The function computes the jacobian for N points of dimension d.
+
+        :param coords: current coords in template reference system (Nxd)
+        :param motion_params: current motion params from template to image (kx1)
+        :return: np array with the jacobians (dxkxN)
+        """
+        return
+
+    # @abc.abstractmethod
+    # def compute_hessian(self, coords, motion_params):
+    #     """
+    #     Computes the second derivative for the motion model, at given coordinates
+    #     and motion params.
+    #     """
+    #     return
+
     # @abc.abstractmethod
     # def warpImage(self, image, motion_params, template_coords):
     #     """
