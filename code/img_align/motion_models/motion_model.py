@@ -1,5 +1,6 @@
 # @brief motion model (function) in direct methods tracking.
 # @author Jose M. Buenaposada
+# @date 2017/08/14 (Modified)
 # @date 2016/11/12
 #
 # Grupo de investigaci'on en Percepci'on Computacional y Rob'otica)
@@ -22,7 +23,7 @@ class MotionModel:
         return
 
     @abc.abstractmethod
-    def scaleInputImageResolution(self, motion_params, scale):
+    def scaleParams(self, motion_params, scale):
         """
 
         :param motion_params: current params
@@ -32,7 +33,7 @@ class MotionModel:
         return
 
     @abc.abstractmethod
-    def transformCoordsToTemplate(self, coords, motion_params):
+    def invMap(self, coords, motion_params):
         """
         Using the motion_params, transform the input coords from image
         coordinates to the corresponding template coordinates.
@@ -44,7 +45,7 @@ class MotionModel:
         return
 
     @abc.abstractmethod
-    def transformCoordsToImage(self, coords, motion_params):
+    def map(self, coords, motion_params):
         """
 
         :param coords: current coords in template reference system
@@ -53,20 +54,20 @@ class MotionModel:
         """
         return
 
-    @abc.abstractmethod
-    def warpImage(self, image, motion_params, template_coords):
-        """
-
-        :param image:
-        :param motion_params:
-        :param template_coords:
-        :return:
-        """
-        return
+    # @abc.abstractmethod
+    # def warpImage(self, image, motion_params, template_coords):
+    #     """
+    #
+    #     :param image:
+    #     :param motion_params:
+    #     :param template_coords:
+    #     :return:
+    #     """
+    #     return
 
     @abc.abstractmethod
     def getNumParams(self):
         return
 
-    def invalidParams(self, motion_params):
-        return False
+    def validParams(self, motion_params):
+        return True
