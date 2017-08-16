@@ -81,7 +81,7 @@ class MotionModel:
         return
 
     @abc.abstractmethod
-    def compute_jacobian(self, coords, motion_params):
+    def computeJacobian(self, coords, motion_params):
         """
         Let f(x, p) the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the first derivative for the motion

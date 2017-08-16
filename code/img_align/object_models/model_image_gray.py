@@ -1,6 +1,6 @@
 # @brief Single image object model in direct methods tracking.
 # @author Jose M. Buenaposada
-# @date 2016/11/12
+# @date 2017/08/16
 #
 # Grupo de investigaci'on en Percepci'on Computacional y Rob'otica)
 # (Perception for Computers & Robots research Group)
@@ -14,18 +14,19 @@ from img_align.object_models import ObjectModel
 from img_align.utils import computeGrayImageGradients
 
 
-class SingleImageModel(ObjectModel):
+class ModelImageGray(ObjectModel):
     """
     A class that defines single template image (target) model.
+    The template image can be equalized and it is smoothed with
+    a Gaussian kernel.
     """
 
     def __init__(self, template_image, equalize=False):
         """
-
         :param template_image:
         :param equalize:
         """
-        super(SingleImageModel, self).__init__()
+        super(ModelImageGray, self).__init__()
 
         assert (template_image is not None)
         rows = template_image.shape[0]
@@ -62,47 +63,53 @@ class SingleImageModel(ObjectModel):
             p2 = self.__control_points_indices[(i + 1) % 4]
             self.__control_points_lines.append([p1, p2])
 
-    def computeTemplateFeaturesGradient(self):
+    def computeFeaturesGradient(self):
         """
         Computes the grey levels gradient of a template image or any other feature
         in the template model.
 
         It computes the  \frac{\partial I(\vx)}{\partial \vx} (the gradient).
-        The size of the output matrix is Nxk being N the number of pixels and k the
-        dimensinality of \vx (the template coordinates vector).
+        The size of the output matrix is NxK being N the number of pixels and K=2 (cartesian
+        coodinates in R2).
 
-        :return: A np array being Nxk (number of template pixels x dim(\vx) )
+        :return: A np array being Nx2 (number of template pixels x 2 )
         """
         return self.__gradients
 
-    def extractFeaturesFromWarpedImage(self, warped_image):
+    def computeImageFeatures(self, image):
         """
         Computes the features vector from the warped image.
 
         Converts the input image to gray levels and then to a column vector (Nx1 with N the
         number of pixels).
 
-        :param warped_image: A np array with the image.
-        :return: A np array being Nxk (number of template pixels x 1 )
+        :param image: A np array with the image.
+        :return: A np array being Nx1 (number of template pixels x 1 )
         """
 
         # We don't do anything special with the warped image (nor DCT, nor Borders, etc).
-        assert (len(warped_image.shape) < 3)
-        warpim_cols = warped_image.shape[1]
-        warpim_rows = warped_image.shape[0]
-        num_pixels = warpim_cols * warpim_rows
+        if len(image.shape) == 3:
+            im_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            im_gray = image
+
+        im_cols = im_gray.shape[1]
+        im_rows = im_gray.shape[0]
+        num_pixels = im_cols * im_rows
+
+        im_gray = cv2.GaussianBlur(im_gray, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
 
         if self.__equalize:
-            equalized_image = cv2.equalizeHist(warped_image)
-            warped_image_vector = np.copy(equalized_image.reshape(num_pixels, 1))
+            equalized_image = cv2.equalizeHist(im_gray)
+            image_vector = np.copy(equalized_image.reshape(num_pixels, 1))
         else:
-            warped_image_vector = np.copy(warped_image.reshape(num_pixels, 1))
+            image_vector = np.copy(im_gray.reshape(num_pixels, 1))
 
-        return np.float64(warped_image_vector)
+        return np.float64(image_vector)
 
-    def computeTemplateFeatures(self, object_params):
+    def computeTemplateFeatures(self, object_params=None):
         """
-        Computes the template gray levels.
+        Returns the template gray levels as a vector.
 
         :param object_params: A np array with the motion params
         :return: A vector that is Nx1 (number of template pixels x 1 ).
@@ -112,13 +119,29 @@ class SingleImageModel(ObjectModel):
 
         return gray_levels
 
+
+    def getReferenceCoords(self):
+        """
+        Returns the coordinates of template points (the reference coordinates).
+
+        Returns the coordinates of each pixel from left to right and top to
+        bottom (by rows). The coordinates of the top left corner are (-width/2,-height/2),
+        and the coordinates of the right bottom corner are  (width/2, height/2). That
+        means that the image center pixel take template (reference) coordinates (0,0).
+
+        :return  A np array that is Nx2 (number of template pixels/features x 2)
+        """
+
+        return np.copy(self.__coordinates)
+
+
     def getCtrlPointsIndices(self):
         """
         Returns the index of control points within the reference coordinates vector,
 
         The coordinates of the top left corner are (-width/2,-height/2),
         and the coordinates of the right bottom corner are  (width/2, height/2). That
-        means that the image center pixel take template (reference) coordinats (0,0).
+        means that the image center pixel take template (reference) coordinates (0,0).
 
         The control points are the four corners of a rectangle and there are four lines
         that joins the four control points.
@@ -133,22 +156,10 @@ class SingleImageModel(ObjectModel):
         """
         return self.__control_points_indices, self.__control_points_lines
 
-    def getReferenceCoords(self):
-        """
-        Returns the coordinates of template points (the reference coordinates).
-
-        Returns the coordinates of each pixel from left to right and top to
-        bottom (by rows). The coordinates of the top left corner are (-width/2,-height/2),
-        and the coordinates of the right bottom corner are  (width/2, height/2). That
-        means that the image center pixel take template (reference) coordinats (0,0).
-
-        :return  A np array that is Nx2 (number of template pixels/features x 2)
-        """
-
-        return np.copy(self.__coordinates)
 
     def getNumOfReferenceCoords(self):
         return self.__image.shape[0] * self.__image.shape[1]
+
 
     def __computeTemplateCoordinates(self, gray_image):
 
