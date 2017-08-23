@@ -1,6 +1,6 @@
 
 # Optimizers
 from .optimizer import Optimizer
-from .optimizer_gn import GaussNewtonOptimizer
+from .optimizer_gauss_newton import OptimizerGaussNewton
 
 

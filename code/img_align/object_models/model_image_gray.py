@@ -10,6 +10,7 @@
 
 import cv2
 import numpy as np
+import math
 from img_align.object_models import ObjectModel
 from img_align.utils import computeGrayImageGradients
 
@@ -50,6 +51,8 @@ class ModelImageGray(ObjectModel):
         self.__gradients = np.float64(computeGrayImageGradients(self.__image))
         self.__gray_levels = np.float64(self.__image.reshape(num_pixels, 1))
         self.__coordinates = self.__computeTemplateCoordinates(self.__image)
+        self.__min_coords = np.amin(self.__coordinates, axis=0)
+        self.__max_coords = np.amax(self.__coordinates, axis=0)
 
         self.__control_points_indices = []
         self.__control_points_indices.append(0)
@@ -76,16 +79,18 @@ class ModelImageGray(ObjectModel):
         """
         return self.__gradients
 
-    def computeImageFeatures(self, image):
+    def computeImageFeatures(self, image, coords):
         """
-        Computes the features vector from the warped image.
-
-        Converts the input image to gray levels and then to a column vector (Nx1 with N the
+        Computes the features vector from the images in the given coords.
+        Converts the input image to gray levels and then performs bilinear
+        interpolation in the position of the coords on the image. (Nx1 with N the
         number of pixels).
 
         :param image: A np array with the image.
+        :param coords: np array of Nx2, N points being 2-dimensional.
         :return: A np array being Nx1 (number of template pixels x 1 )
         """
+        assert(coords.shape[1] == 2)
 
         # We don't do anything special with the warped image (nor DCT, nor Borders, etc).
         if len(image.shape) == 3:
@@ -95,17 +100,61 @@ class ModelImageGray(ObjectModel):
 
         im_cols = im_gray.shape[1]
         im_rows = im_gray.shape[0]
-        num_pixels = im_cols * im_rows
+        num_pixels_img = im_cols*im_rows
 
-        im_gray = cv2.GaussianBlur(im_gray, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
+        # As coords, in the worst case, it will be between 4 integer coordinates on
+        # image. We have to find its gray level using the gray levels of the 4 sorrounding pixels =>
+        # bilinear gray level interpolation.
+        #
+        #
+        #    g2 +---------------+ g3
+        #       |               |
+        #  y    |     * (x,y) <-|---------------- image coordinates to interpolate gray levels on.
+        #       |               |
+        #    g0 +---------------+ g1
+        #               x
+        #
 
+        # As template top left corner coords are are (-width/2, -height/2) then, inorder
+        # to get (0,0) in that corner, we have to add (width/2, height/2) to all coordinates
+        # that are going to sample from an image. self.__min_coords are the coordinates of top
+        # left corner of the template.
+        floor_x = np.floor(coords[:,0])
+        ceil_x = np.ceil(coords[:,0])
+        floor_y = np.floor(coords[:,1])
+        ceil_y = np.ceil(coords[:,1])
+
+        g0 = np.zeros((coords.shape[0],1))
+        g1 = np.zeros((coords.shape[0],1))
+        g2 = np.zeros((coords.shape[0],1))
+        g3 = np.zeros((coords.shape[0],1))
+
+        l  = (floor_y >= 0) & (floor_y < im_rows) & (floor_x >= 0) & (floor_x < im_cols)
+        im_gray_flatten = im_gray.flatten()[:,np.newaxis]
+        g0[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*floor_y[l])])
+        g1[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*ceil_y[l])])
+        g2[l,:] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*ceil_y[l])])
+        g3[l,:] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*floor_y[l])])
+
+        x_delta = coords[:,0] - floor_x[:]
+        x_delta = x_delta[:,np.newaxis]
+        y_delta = coords[:,1] - floor_y[:]
+        y_delta = y_delta[:,np.newaxis]
+
+        g01 = g0 + (g1 - g0)*x_delta
+        g23 = g2 + (g3 - g2)*y_delta
+
+        features = g01 + (g23 - g01)*y_delta
+
+        warped_img = np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
+        warped_img = cv2.GaussianBlur(warped_img, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
         if self.__equalize:
-            equalized_image = cv2.equalizeHist(im_gray)
-            image_vector = np.copy(equalized_image.reshape(num_pixels, 1))
-        else:
-            image_vector = np.copy(im_gray.reshape(num_pixels, 1))
+            warped_img = np.float64(cv2.equalizeHist(warped_img))
 
-        return np.float64(image_vector)
+        num_template_pixels = self.__image.shape[0] * self.__image.shape[1]
+        features = np.reshape(warped_img, (num_template_pixels, 1))
+
+        return features
 
     def computeTemplateFeatures(self, object_params=None):
         """

@@ -48,12 +48,14 @@ class ObjectModel:
 
 
     @abc.abstractmethod
-    def computeImageFeatures(self, image):
+    def computeImageFeatures(self, image, coords):
         """
-        Computes the features vector from a given image (it can be Gray, RGB, RGB-D, etc).
+        Computes the features vector from the images in the given coords
+        (it can be Gray, RGB, RGB-D, etc). The number of coords is N and the
+        dimensions of each coord is K (K=2 for 2D, K=3 for 3D, etc).
 
         This method is intended to compute the same image features as used in the
-        template (Grey levels, gradient orientations, Descriptor Fields, Bit-Planes, etc)
+        template (Gray levels, gradient orientations, Descriptor Fields, Bit-Planes, etc)
         from the input image. If features are just plain gray levels
         then this method returns the input image grey levels in an Nx1 vector.
 
@@ -64,9 +66,11 @@ class ObjectModel:
         first, (0,1) is second, (0,2) is third, etc.
 
         :param image: input image to compute the feature channels on.
+        :param coords: NxK image coordinates to compute the feature channels over.
         :return: A np array that is NxC (number of points x number of channels )
         """
         return
+
 
     @abc.abstractmethod
     def computeTemplateFeatures(self, object_params=None):

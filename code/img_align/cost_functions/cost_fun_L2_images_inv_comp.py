@@ -11,10 +11,11 @@
 
 import abc
 import numpy as np
-from img_align.cost_functions import CostFunction
+import math
+from img_align.cost_functions import CostFunL2Images
 
 
-class CostFuncL2ImagesInvComp(CostFunction):
+class CostFunL2ImagesInvComp(CostFunL2Images):
 
     """
     The interface for the Inverse Compositional cost functions.
@@ -88,10 +89,11 @@ class CostFuncL2ImagesInvComp(CostFunction):
         """
 
         J = self.computeJacobian(motion_params)
+
         # redidual_vector is Nx1 (number of pixels)
         # J is Nx8 (number of pixels x number of motion params).
         # delta_params is 8x1 (number of motion params x 1)
-        cost = np.linalg.norm(residual_vector + np.dot(J, delta_params))
+        cost = sqrt(np.linalg.norm(residual_vector + np.dot(J, delta_params)))
 
         return cost
 
@@ -108,44 +110,48 @@ class CostFuncL2ImagesInvComp(CostFunction):
         assert (motion_params.shape[1] == 1)
 
         template_coords = self.object_model.getReferenceCoords()
-        warped_image = self.motion_model.warpImage(image, motion_params, template_coords)
-
-        if self.show_debug_info:
-            print "template_coords=", template_coords
-            print "warped_image.shape=", warped_image.shape
-            cv2.imshow('Warped Image original', warped_image)
-            cv2.waitKey()
-
-        if len(warped_image.shape) == 3:
-            warped_image_gray = cv2.cvtColor(warped_image, cv2.COLOR_RGB2GRAY)
-        else:
-            warped_image_gray = np.copy(warped_image)
-
-        features_vector = self.object_model.extractImageFeatures(warped_image_gray)
+        image_coords = self.motion_model.map(template_coords, motion_params)
+        features_vector = self.object_model.extractImageFeatures(image, image_coords)
         template_features_vector = self.object_model.computeFeatures(motion_params)
 
-        if self.show_debug_info:
-            I_warped = np.uint8(np.reshape(features_vector, warped_image.shape))
-            I_template = np.uint8(np.reshape(template_features_vector, warped_image.shape))
-            cv2.imshow('features_vector reshaped', I_warped)
-            cv2.imshow('template_features_vector reshaped', I_template)
+        # template_coords = self.object_model.getReferenceCoords()
+        # warped_image = self.motion_model.warpImage(image, motion_params, template_coords)
+        #
+        # if self.show_debug_info:
+        #     print "template_coords=", template_coords
+        #     print "warped_image.shape=", warped_image.shape
+        #     cv2.imshow('Warped Image original', warped_image)
+        #     cv2.waitKey()
+        #
+        # if len(warped_image.shape) == 3:
+        #     warped_image_gray = cv2.cvtColor(warped_image, cv2.COLOR_RGB2GRAY)
+        # else:
+        #     warped_image_gray = np.copy(warped_image)
+        # features_vector = self.object_model.extractImageFeatures(warped_image_gray)
+        # template_features_vector = self.object_model.computeFeatures(motion_params)
+
+        # if self.show_debug_info:
+        #     I_warped = np.uint8(np.reshape(features_vector, warped_image.shape))
+        #     I_template = np.uint8(np.reshape(template_features_vector, warped_image.shape))
+        #     cv2.imshow('features_vector reshaped', I_warped)
+        #     cv2.imshow('template_features_vector reshaped', I_template)
 
         # The features vector in this case are, Nx2 matrices:
         #   -the first column has the x image gradient
         #   -the second column has the y image gradient
-        assert (features_vector.shape[0] == warped_image.shape[0]*warped_image.shape[1])
+        # assert (features_vector.shape[0] == warped_image.shape[0]*warped_image.shape[1])
         assert (features_vector.shape[1] == 1)
         assert (template_features_vector.shape == features_vector.shape)
 
         residuals = np.float64(features_vector) - np.float64(template_features_vector)
 
-        if self.show_debug_info:
-            I_residuals = np.reshape(residuals, warped_image.shape)
-            max_residual = np.max(I_residuals)
-            min_residual = np.min(I_residuals)
-            I_residual = np.uint8(255*(I_residuals - min_residual) / (max_residual - min_residual))
-            cv2.imshow('residual reshaped', I_residuals)
-            cv2.waitKey()
+        # if self.show_debug_info:
+        #     I_residuals = np.reshape(residuals, warped_image.shape)
+        #     max_residual = np.max(I_residuals)
+        #     min_residual = np.min(I_residuals)
+        #     I_residual = np.uint8(255*(I_residuals - min_residual) / (max_residual - min_residual))
+        #     cv2.imshow('residual reshaped', I_residuals)
+        #     cv2.waitKey()
 
         return residuals
 
@@ -179,7 +185,6 @@ class CostFuncL2ImagesInvComp(CostFunction):
         return new_params
 
 
-    @abc.abstractmethod
     def computeConstantJacobian(self):
         template_coords = self.object_model.getReferenceCoords()
         J = np.zeros((template_coords.shape[0], self.motion_model.getNumParams()), dtype=np.float64)

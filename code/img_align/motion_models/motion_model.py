@@ -105,18 +105,33 @@ class MotionModel:
 
     # @abc.abstractmethod
     # def warpImage(self, image, motion_params, template_coords):
-    #     """
+    #      """
     #
-    #     :param image:
-    #     :param motion_params:
-    #     :param template_coords:
-    #     :return:
-    #     """
-    #     return
+    #      Get the grey levels
+    #
+    #      :param image: This is the input image
+    #      :param motion_params: Actual motion model parameters
+    #      :param template_coords: template coords to map with motion params
+    #      :return:
+    #      """
+    #      return
+
+    @abc.abstractmethod
+    def getIdentityParams(self):
+        """
+        Get the motion params that maps coords in the same coords.
+
+            motion_model.map(coords, motion_params) returns coords
+
+        :return:
+        """
+        return
+
 
     @abc.abstractmethod
     def getNumParams(self):
         return
+
 
     def validParams(self, motion_params):
         return True

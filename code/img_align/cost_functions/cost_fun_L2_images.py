@@ -10,8 +10,9 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import abc
+from img_align.cost_functions import CostFunction
 
-class CostFunL2Images:
+class CostFunL2Images(CostFunction):
     """
     The interface for the Cost Functions that compare grey levels (or descriptors) of
     the template image and the input image. This cost functions departs from an

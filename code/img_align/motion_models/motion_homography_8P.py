@@ -177,15 +177,14 @@ class MotionHomography8P(MotionModel):
         return jacobians_mat
 
     # def warpImage(self, image, motion_params, template_coords):
-    #     """
-    #
+    #      """
     #     :param image:
     #     :param motion_params:
     #     :param template_coords:
     #     :return:
-    #     """
+    #      """
     #
-    #     H = np.reshape(np.append(motion_params, 1.0), (3,3)).T
+    #     H = np.reshape(np.append(motion_params, 1.0), (3,3))
     #
     #     # Find min_x, min_y as well as max_x,max_y in template coords.
     #     max_val = np.amax(template_coords, axis=0)
@@ -222,6 +221,15 @@ class MotionHomography8P(MotionModel):
         newH = np.dot(S, H)
         new_params = np.copy(np.reshape(newH, (1,9)))
         return new_params[:,0:8]
+
+
+    def getIdentityParams(self):
+        """
+        :return:
+        """
+        return np.array([[1.],[0.],[0.],
+                         [0.],[1.],[0.],
+                         [0.],[0.]])
 
 
     def getNumParams(self):

@@ -61,7 +61,6 @@ class Homography2DInvCompProblem(InverseCompositionalProblem):
         :return:
         """
 
-
         # We need a 9x1 motion params vector
         assert (motion_params.shape[0] == 9)
         assert (motion_params.shape[1] == 1)

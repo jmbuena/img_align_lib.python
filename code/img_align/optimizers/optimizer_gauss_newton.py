@@ -10,16 +10,20 @@
 
 import numpy as np
 from img_align.optimizers import Optimizer
+from img_align.cost_functions import CostFunL2Images
 
-class GaussNewtonOptimizer(Optimizer):
+class OptimizerGaussNewton(Optimizer):
     def __init__(self,
-                 optim_problem,
+                 cost_function,
                  max_iter=20,
                  tol_gradient=0.001,
                  tol_params=0.00001,
                  show_iter=False):
 
-        self.optim_problem = optim_problem
+        if not isinstance(cost_function, CostFunSquaredL2NormImages):
+            raise ValueError('Only CostFunSquaredL2NormImages cost functions allowed!')
+
+        self.cost_function = cost_function
         self.max_iter = max_iter
         self.tol_gradient = tol_gradient
         self.tol_params = tol_params
@@ -29,14 +33,6 @@ class GaussNewtonOptimizer(Optimizer):
         #  the len(iterations_costs)-1 is the
         #  last iteration cost. Every time
         self.iter_costs = []
-
-        # super(GaussNewtonOptimizer, self).__init__(
-        #          optim_problem,
-        #          max_iter,
-        #          tol_gradient,
-        #          tol_params,
-        #          show_iter
-        # )
 
 
     def solve(self, frame, former_params):
@@ -57,12 +53,12 @@ class GaussNewtonOptimizer(Optimizer):
         while not found and (k < self.max_iter):
             k += 1
 
-            # compute residual error to minimize for new motion parameters
-            residual = self.optim_problem.computeResidual(frame, current_params)
+            # compute residuals to minimize for new motion parameters
+            residuals = self.cost_function.computeResiduals(frame, current_params)
 
             # Compute normal equations
-            invJ = self.optim_problem.computeInverseJacobian(current_params)
-            delta = np.dot(invJ, residual)
+            invJ = self.cost_function.computeJacobianPseudoInverse(current_params)
+            delta = np.dot(invJ, residuals)
 
             # 2nd stopping criterion: The increment in the parameters vector
             # is under a given threshold.
@@ -73,15 +69,15 @@ class GaussNewtonOptimizer(Optimizer):
                     print "STOP. Parameters not increasing: norm(delta) = ", norm_delta
 
             # Compute parameters update
-            new_params = self.optim_problem.updateMotionParams(current_params, delta)
+            new_params = self.cost_function.updateMotionParams(current_params, delta)
 
             # Compute gradient instantiated in current x
-            residual = self.optim_problem.computeResidual(frame, new_params)
-            J = self.optim_problem.computeJacobian(new_params)
+            residual = self.cost_function.computeResiduals(frame, new_params)
+            J = self.cost_function.computeJacobian(new_params)
             gradient = np.dot(J.T, residual) # residual.T column vector
             gradient_norm = np.linalg.norm(gradient)
 
-            cost = self.optim_problem.computeCostFunction(residual, new_params, delta, frame)
+            cost = self.cost_function.computeValue(residuals, new_params, delta, frame)
             self.iter_costs.append(cost)
 
             if self.show_iter:
