@@ -7,82 +7,113 @@ import os
 from img_align.motion_models import MotionHomography8P
 from img_align.object_models import ModelImageGray
 from img_align.cost_functions import CostFunL2ImagesInvComp
+from img_align.optimizers import OptimizerGaussNewton
 
 class TestMotionHomography8P(unittest.TestCase):
-    None
 
-    # def setUp(self):
-    #
-    #     template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
-    #     self.initial_params = getInitialParams(template)
-    #     assert(template is not None)
-    #     template_model = ModelImageGray(template, equalize=True)
-    #     motion_model = MotionHomography8P()
-    #     cost_function = CostFunInvCompImages(motion_model, template_model)
-    #     self.optimizer = OptimizerGaussNewton(cost_function, max_iter=20, show_iter=False)
-    #
-    # #     # Setup the optimization problem: object model, motion model and Optimizer
-    # #     motion_model = Homography2DInvComp()
-    # #     object_model = SingleImageModel(template_img, equalize=True)
-    # #     optim_problem = Homography2DInvCompProblem(object_model, motion_model, show_debug_info=False)
-    # #     optim = GaussNewtonOptimizer(optim_problem, max_iter=20, show_iter=False)
+    def setUp(self):
 
-    # def getInitialParams(self, template):
-    #
-    #     # The template is a rectangular image
-    #     template_width, template_height = template.shape
-    #     src = np.array([[0, 0],
-    #                     [template_width, 0],
-    #                     [template_width, template_height],
-    #                     [0, template_height]],
-    #                    dtype=np.float32)
-    #     dst = np.array([[106, 166],
-    #                     [106, 69],
-    #                     [211, 69],
-    #                     [211, 166]],
-    #                    dtype=np.float32)
-    #
-    #     H = cv2.getPerspectiveTransform(src, dst)
-    #
-    #     # The template center point should be the (0,0). Therefore we need to
-    #     # correct the homography H in order to be the right one.
-    #     TR = np.array([[1., 0., template_width / 2.],
-    #                    [0., 1., template_height / 2.],
-    #                    [0., 0., 1.]])
-    #     H2 = np.dot(H, TR) - np.eye(3, 3)
-    #     initial_params = np.copy(np.reshape(H2, (9, 1)))
-    #     initial_params = initial_params[0:8,:]
-    #
-    #     return initial_params
+    #    self.template = cv2.imread(os.path.join('resources', 'book_lowres.jpg'))
+        self.template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
+        self.initial_params = self.getInitialParams(self.template)
+        assert(self.template is not None)
+        self.object_model = ModelImageGray(self.template, equalize=True)
+        self.motion_model = MotionHomography8P()
+        self.cost_function = CostFunL2ImagesInvComp(self.object_model, self.motion_model, show_debug_info=True)
+        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=30, show_iter=False)
 
-    # def test_inv_comp(self):
-    #
-    #     video_source = os.path.join('resources', 'book1.mp4')
-    #
-    #     cv2.namedWindow('Video')
-    #     video_capture = cv2.VideoCapture(video_source)
-    #     params = self.initial_params
-    #     #i = 1
-    #     while True:
-    #         # Capture frame-by-frame
-    #         ret, frame = video_capture.read()
-    #         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #
-    #         #tracker.processFrame(gray)
-    #         params = self.optimizer.solve(frame, params)
-    #
-    #         # Display the resulting frame
-    #         #tracker.showResults(frame)
-    #         cv2.imshow('Video', frame)
-    #         #cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
-    #
-    #         if cv2.waitKey(10) & 0xFF == ord('q'):
-    #             break
-    #
-    #         #i = i + 1
-    #     # When everything is done, release the capture
-    #     video_capture.release()
-    #     cv2.destroyAllWindows()
+    def getInitialParams(self, template):
+
+        # The template center point should be the (0,0). Therefore we need to
+        # correct start the homograthe homography H in order to be the right one.
+        heightDiv2 = round(template.shape[0]/2.0)
+        widthDiv2 = round(template.shape[1]/2.0)
+        pts1 = np.array([[-widthDiv2, -heightDiv2],
+                          [widthDiv2, -heightDiv2],
+                          [widthDiv2, heightDiv2],
+                          [-widthDiv2, heightDiv2]], dtype=np.float32)
+        # pts2 = np.array([[52, 27],
+        #                  [275, 35],
+        #                  [274, 187],
+        #                  [49, 183]], dtype=np.float32)
+        pts2 = np.array([[106, 69],
+                         [211, 69],
+                         [211, 166],
+                         [106, 166]], dtype=np.float32)
+
+        H = cv2.getPerspectiveTransform(pts1, pts2)
+        H = H / H[2,2]
+
+        initial_params = np.copy(np.reshape(H, (9, 1)))
+        initial_params = initial_params[0:8,:]
+
+        return initial_params
+
+    def showResults(self, frame, motion_params):
+        """
+        Show the tracking results over the given frame
+
+        :param frame: plot results over this frame
+        :return: The results plotted over the input frame with OpenCV commands.
+        """
+
+        ref_coords = self.object_model.getReferenceCoords()
+        ctrl_indices, ctrl_lines = self.object_model.getCtrlPointsIndices()
+        image_coords = np.int32(self.motion_model.map(ref_coords, motion_params))
+
+        H = np.reshape(np.append(motion_params, 1.0), (3,3))
+
+        for i in range(len(ctrl_lines)):
+            index1 = ctrl_lines[i][0]
+            index2 = ctrl_lines[i][1]
+
+            cv2.line(frame,
+                     (image_coords[index1,0], image_coords[index1,1]),
+                     (image_coords[index2,0], image_coords[index2,1]),
+                     color=(255, 255, 255), # white color
+                     thickness=2)
+
+        for j in range(len(ctrl_indices)):
+            index1 = ctrl_indices[j]
+
+            cv2.circle(frame,
+                       (image_coords[index1, 0], image_coords[index1, 1]),
+                       3,
+                       (0, 0., 255.),  # red color
+                       -1)  # filled
+
+        return
+
+
+    def test_inv_comp(self):
+
+        video_source = os.path.join('resources', 'book1.mp4')
+
+        cv2.namedWindow('Video')
+        video_capture = cv2.VideoCapture(video_source)
+        params = self.initial_params
+        #i = 1
+        while True:
+            # Capture frame-by-frame
+            ret, frame = video_capture.read()
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            #tracker.processFrame(gray)
+            params = self.optimizer.solve(frame, params)
+            self.showResults(frame, params)
+
+            # Display the resulting frame
+            #tracker.showResults(frame)
+            cv2.imshow('Video', frame)
+            #cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
+
+            if cv2.waitKey() & 0xFF == ord('q'):
+                 break
+
+            #i = i + 1
+        # When everything is done, release the capture
+        video_capture.release()
+        cv2.destroyAllWindows()
 
 
 

@@ -72,10 +72,10 @@ class MotionModel:
         """
         Let f(x, p) the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the motion model params such as:
-            f(x, composition_params) =  f(f^{-1}(x, motion_params1), motion_params2)
+            f(x, composition_params) =  f(f^{-1}(x, motion_params2), motion_params1)
 
-        :param motion_params1: motion params for f^{-1}(x, motion_params1).
-        :param motion_params2: motion params for second application of f.
+        :param motion_params1: motion params for second application of f.
+        :param motion_params2: motion params for f^{-1}(x, motion_params1).
         :return: np array with the updated motion parameters.
         """
         return

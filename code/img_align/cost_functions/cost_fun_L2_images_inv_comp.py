@@ -12,8 +12,8 @@
 import abc
 import numpy as np
 import math
+import cv2
 from img_align.cost_functions import CostFunL2Images
-
 
 class CostFunL2ImagesInvComp(CostFunL2Images):
 
@@ -31,8 +31,10 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         :param motion_model:
         :return:
         """
-        super(CostFuncL2ImagesInvComp, self).__init__(object_model, motion_model, show_debug_info)
+        super(CostFunL2ImagesInvComp, self).__init__(object_model, motion_model, show_debug_info)
 
+        self.show_debug_info_jacobians = False
+        self.show_debug_info_inv_jacobians = False
         self.__initialized = False
         self.__J = None
         self.__invJ = None
@@ -53,7 +55,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         return self.__J
 
-    def computeJacobianPseudoinverse(self, motion_params):
+    def computeJacobianPseudoInverse(self, motion_params):
         """
 
         :param image:
@@ -62,6 +64,13 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         """
         if not self.__initialized:
             self.__setupMatrices()
+
+        if self.show_debug_info_inv_jacobians:
+            for i in range(self.__invJ.shape[0]):
+                max_ = np.max(self.__invJ[i,:])
+                min_ = np.min(self.__invJ[i,:])
+                J_img = self.object_model.convertFeaturesToImage(255*(self.__invJ[i,:]-min_)/(max_-min_))
+                cv2.imshow('invJ{}'.format(i), np.uint8(J_img))
 
         return self.__invJ
 
@@ -93,7 +102,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         # redidual_vector is Nx1 (number of pixels)
         # J is Nx8 (number of pixels x number of motion params).
         # delta_params is 8x1 (number of motion params x 1)
-        cost = sqrt(np.linalg.norm(residual_vector + np.dot(J, delta_params)))
+        cost = math.sqrt(np.linalg.norm(residual_vector + np.dot(J, delta_params)))
 
         return cost
 
@@ -111,49 +120,26 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         template_coords = self.object_model.getReferenceCoords()
         image_coords = self.motion_model.map(template_coords, motion_params)
-        features_vector = self.object_model.extractImageFeatures(image, image_coords)
-        template_features_vector = self.object_model.computeFeatures(motion_params)
+        features_img = self.object_model.computeImageFeatures(image, image_coords)
+        features_template = self.object_model.computeTemplateFeatures(motion_params)
 
-        # template_coords = self.object_model.getReferenceCoords()
-        # warped_image = self.motion_model.warpImage(image, motion_params, template_coords)
-        #
-        # if self.show_debug_info:
-        #     print "template_coords=", template_coords
-        #     print "warped_image.shape=", warped_image.shape
-        #     cv2.imshow('Warped Image original', warped_image)
-        #     cv2.waitKey()
-        #
-        # if len(warped_image.shape) == 3:
-        #     warped_image_gray = cv2.cvtColor(warped_image, cv2.COLOR_RGB2GRAY)
-        # else:
-        #     warped_image_gray = np.copy(warped_image)
-        # features_vector = self.object_model.extractImageFeatures(warped_image_gray)
-        # template_features_vector = self.object_model.computeFeatures(motion_params)
-
-        # if self.show_debug_info:
-        #     I_warped = np.uint8(np.reshape(features_vector, warped_image.shape))
-        #     I_template = np.uint8(np.reshape(template_features_vector, warped_image.shape))
-        #     cv2.imshow('features_vector reshaped', I_warped)
-        #     cv2.imshow('template_features_vector reshaped', I_template)
+        if self.show_debug_info:
+            I_warped = self.object_model.convertFeaturesToImage(features_img)
+            I_template = self.object_model.convertFeaturesToImage(features_template)
+            cv2.imshow('features_vector reshaped', I_warped)
+            cv2.imshow('template_features_vector reshaped', I_template)
 
         # The features vector in this case are, Nx2 matrices:
         #   -the first column has the x image gradient
         #   -the second column has the y image gradient
         # assert (features_vector.shape[0] == warped_image.shape[0]*warped_image.shape[1])
-        assert (features_vector.shape[1] == 1)
-        assert (template_features_vector.shape == features_vector.shape)
+        assert (features_img.shape[1] == 1)
+        assert (features_template.shape == features_img.shape)
 
-        residuals = np.float64(features_vector) - np.float64(template_features_vector)
-
-        # if self.show_debug_info:
-        #     I_residuals = np.reshape(residuals, warped_image.shape)
-        #     max_residual = np.max(I_residuals)
-        #     min_residual = np.min(I_residuals)
-        #     I_residual = np.uint8(255*(I_residuals - min_residual) / (max_residual - min_residual))
-        #     cv2.imshow('residual reshaped', I_residuals)
-        #     cv2.waitKey()
+        residuals = np.float64(features_img) - np.float64(features_template)
 
         return residuals
+
 
     def updateMotionParams(self, motion_params, inc_params):
         """
@@ -162,38 +148,49 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
           In the case of a homography motion model is given by:
 
-          H(motion_params) * inverse(H(inc_params))
+          H(motion_params) * inverse(H(inc_params + identity_params))
 
         :param motion_params: old motion parameters
         :param inc_params compositional update paramters vector
         :return: The updated motion params with old ones and the delta in parameters.
         """
 
-        # The Inverse compositional homography model takes 1 + parameters in the
-        # diagonal, therefore we need to add np.eye(3,3)
-        H = np.reshape(motion_params, (3,3)).T + np.eye(3,3)
-        dH = np.reshape(inc_params, (3,3)).T + np.eye(3,3)
-
-        newH = np.dot(H, np.linalg.pinv(dH))
-
-        # The Inverse compositional homography model takes 1 + parameters in the
-        # diagonal, therefore we need to subtract np.eye(3,3) to get the
-        # parameters back from the homography matrix.
-        newH = newH - np.eye(3, 3)
-        new_params = np.copy(np.reshape(newH.T, (9, 1)))
-
-        return new_params
-
+        # Compute the compositional update of the motion params, note that the update is done
+        # with the parameters incriment plus the identity params (this is necessary whenever the
+        # motion model has no 0 identity motion paramenters).
+        identity_params = self.motion_model.getIdentityParams()
+        return self.motion_model.getCompositionWithInverseParams(motion_params, inc_params + identity_params)
 
     def computeConstantJacobian(self):
+
         template_coords = self.object_model.getReferenceCoords()
         J = np.zeros((template_coords.shape[0], self.motion_model.getNumParams()), dtype=np.float64)
         zero_params = np.zeros(self.motion_model.getNumParams())
         gradients = self.object_model.computeFeaturesGradient()
 
-        Jf = self.motion_model.computeJacobian(template_coords, self.motion_model.getIdentityParams())
+        if self.show_debug_info_jacobians:
+            max_ = np.max(gradients[:,0])
+            min_ = np.min(gradients[:,0])
+            g_x = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:,0]) - min_)/(max_- min_))
+            max_ = np.max(gradients[:,1])
+            min_ = np.min(gradients[:,1])
+            g_y = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:,1]) - min_) / (max_ - min_))
+            cv2.imshow('g_x', np.uint8(g_x))
+            cv2.imshow('g_y', np.uint8(g_y))
+
+        # The Jacobian of the motion model, in Inverse Compositional, should be instantiated in the
+        # motion model indentity params.
+        identity_params = self.motion_model.getIdentityParams()
+        Jf = self.motion_model.computeJacobian(template_coords, identity_params)
 
         for i in range(Jf.shape[2]):
            J[i,:] = np.dot(gradients[i,:], Jf[:,:,i])
+
+        if self.show_debug_info_jacobians:
+            for j in range(J.shape[1]):
+                max_ = np.max(J[:,j])
+                min_ = np.min(J[:,j])
+                J_img = self.object_model.convertFeaturesToImage(255*(J[:,j]-min_)/(max_-min_))
+                cv2.imshow('J{}'.format(j), np.uint8(J_img))
 
         return J

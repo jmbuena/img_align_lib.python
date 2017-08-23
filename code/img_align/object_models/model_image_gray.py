@@ -129,7 +129,7 @@ class ModelImageGray(ObjectModel):
         g2 = np.zeros((coords.shape[0],1))
         g3 = np.zeros((coords.shape[0],1))
 
-        l  = (floor_y >= 0) & (floor_y < im_rows) & (floor_x >= 0) & (floor_x < im_cols)
+        l  = (floor_y >= 0) & (ceil_y < im_rows) & (floor_x >= 0) & (ceil_x < im_cols)
         im_gray_flatten = im_gray.flatten()[:,np.newaxis]
         g0[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*floor_y[l])])
         g1[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*ceil_y[l])])
@@ -207,8 +207,13 @@ class ModelImageGray(ObjectModel):
 
 
     def getNumOfReferenceCoords(self):
+
         return self.__image.shape[0] * self.__image.shape[1]
 
+
+    def convertFeaturesToImage(self, features):
+
+        return np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
 
     def __computeTemplateCoordinates(self, gray_image):
 

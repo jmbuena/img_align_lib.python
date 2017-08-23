@@ -20,7 +20,7 @@ class OptimizerGaussNewton(Optimizer):
                  tol_params=0.00001,
                  show_iter=False):
 
-        if not isinstance(cost_function, CostFunSquaredL2NormImages):
+        if not isinstance(cost_function, CostFunL2Images):
             raise ValueError('Only CostFunSquaredL2NormImages cost functions allowed!')
 
         self.cost_function = cost_function

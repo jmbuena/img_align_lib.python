@@ -61,9 +61,9 @@ class MotionHomography8P(MotionModel):
         :return: np array with the updated coords.
         """
         H = np.append(motion_params, 1.0).reshape(3,3)
-        invH = np.linalg.inv(H)
+        invH = np.linalg.pinv(H)
         inv_params = np.copy(np.reshape(invH, (9,1)))
-        inv_params = inv_params[0:8]
+        inv_params = inv_params[0:8,:]
 
         return self.map(coords, inv_params)
 
@@ -77,6 +77,7 @@ class MotionHomography8P(MotionModel):
         :param motion_params: current motion params from template to image
         :return: np array with the updated cartesian coords (Nx2)
         """
+
         coords_cols = coords.shape[1]
         coords_rows = coords.shape[0]
         assert(coords_cols == 2); # We need two dimensional coordinates
@@ -97,7 +98,7 @@ class MotionHomography8P(MotionModel):
         Le f(x, p) = H(p)*(x, 1)^T the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the motion model params, composition_params,
         such as:
-            f(x, composition_params) =  H(motion_params2)*H(motion_params_1)*(x, 1)^T
+            f(x, composition_params) =  H(motion_params1)*H(motion_params_2)*(x, 1)^T
 
         :param motion_params1: motion params for f(x, motion_params1).
         :param motion_params2: motion params for second application of f.
@@ -107,11 +108,11 @@ class MotionHomography8P(MotionModel):
         H1 = np.reshape(np.append(motion_params1,1.0), (3,3))
         H2 = np.reshape(np.append(motion_params2,1.0), (3,3))
 
-        Hcomp = np.dot(H2,H1)
+        Hcomp = np.dot(H1,H2)
         Hcomp = Hcomp / Hcomp[2,2] # We make again 1 the coordinate [2, 2] in Hcomp.
 
-        composition_params = np.copy(np.reshape(Hcomp, (1,9)))
-        return composition_params[:,0:8]
+        composition_params = np.copy(np.reshape(Hcomp, (9,1)))
+        return composition_params[0:8,:]
 
 
     def getCompositionWithInverseParams(self, motion_params1, motion_params2):
@@ -119,21 +120,21 @@ class MotionHomography8P(MotionModel):
         Le f(x, p) = H(p)*(x, 1)^T the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the motion model params, composition_params,
         such as:
-            f(x, composition_params) =  H(motion_params2)*H(motion_params_1)^{-1}*(x, 1)^T
+            f(x, composition_params) =  H(motion_params1)*H(motion_params_2)^{-1}*(x, 1)^T
 
-        :param motion_params1: motion params for f(x, motion_params1).
-        :param motion_params2: motion params for application of f^{-1}.
+        :param motion_params1: motion params for application of f^{-1}.
+        :param motion_params2: motion params for f(x, motion_params1).
         :return: np array with the updated motion parameters.
         """
 
         H1 = np.reshape(np.append(motion_params1,1.0), (3,3))
         H2 = np.reshape(np.append(motion_params2,1.0), (3,3))
 
-        Hcomp = np.dot(H2, np.linalg.inv(H1))
+        Hcomp = np.dot(H1, np.linalg.pinv(H2))
         Hcomp = Hcomp / Hcomp[2,2] # We make again 1 the coordinate [2, 2] in Hcomp.
 
-        composition_params = np.copy(np.reshape(Hcomp, (1,9)))
-        return composition_params[:,0:8]
+        composition_params = np.copy(np.reshape(Hcomp, (9,1)))
+        return composition_params[0:8,:]
 
 
     def computeJacobian(self, coords, motion_params):
@@ -165,10 +166,12 @@ class MotionHomography8P(MotionModel):
             # x is the coords[i,0] and y is coords[i,1]
             x = coords[i,0]
             y = coords[i,1]
-            Jp = np.array([[1, 0, -x], [0, 1, -y]])
+            Jp = np.array([[1., 0., -x], [0., 1., -y]])
 
             # Jf is the derivative of f(x_h, p) w.r.t. p, evaluated at motion_params:
-            Jf = np.array([[x, y, 1, 0, 0, 0, 0, 0], [0, 0, 0, x, y, 1, 0, 0], [0, 0, 0, 0, 0, 0, x, y]])
+            Jf = np.array([[x , y , 1., 0., 0., 0., 0., 0.],
+                           [0., 0., 0., x , y , 1., 0., 0.],
+                           [0., 0., 0., 0., 0., 0., x , y]])
 
             # The Jacobian of f with respect to motion parameters is
             # (d p(x_h) / dx_h) * (d f(x_h, p) / d p)
@@ -176,36 +179,6 @@ class MotionHomography8P(MotionModel):
 
         return jacobians_mat
 
-    # def warpImage(self, image, motion_params, template_coords):
-    #      """
-    #     :param image:
-    #     :param motion_params:
-    #     :param template_coords:
-    #     :return:
-    #      """
-    #
-    #     H = np.reshape(np.append(motion_params, 1.0), (3,3))
-    #
-    #     # Find min_x, min_y as well as max_x,max_y in template coords.
-    #     max_val = np.amax(template_coords, axis=0)
-    #     min_val = np.amin(template_coords, axis=0)
-    #
-    #     TR = np.array([[1., 0., min_val[0]], # min_x
-    #                    [0., 1., min_val[1]], # min_y
-    #                    [0., 0., 1.]])
-    #
-    #     # TR is necessary because the Warpers do warping taking
-    #     # he pixel (0,0) as the left and top most pixel of the template.
-    #     # So, we have move the (0,0) to the center of the Template.
-    #     M = np.dot(H, TR)
-    #
-    #     warped_img_rows = np.int(max_val[1] - min_val[1] + 1)
-    #     warped_img_cols = np.int(max_val[0] - min_val[0] + 1)
-    #     warped_image = cv2.warpPerspective(image, M,
-    #                                        (warped_img_cols, warped_img_rows),
-    #                                        flags=cv2.INTER_AREA | cv2.WARP_INVERSE_MAP)
-    #
-    #     return warped_image
 
     def scaleParams(self, motion_params, scale):
         """
@@ -219,8 +192,8 @@ class MotionHomography8P(MotionModel):
         S[0,0] = scale
         S[1,1] = scale
         newH = np.dot(S, H)
-        new_params = np.copy(np.reshape(newH, (1,9)))
-        return new_params[:,0:8]
+        new_params = np.copy(np.reshape(newH, (9,1)))
+        return new_params[0:8,:]
 
 
     def getIdentityParams(self):
@@ -237,7 +210,7 @@ class MotionHomography8P(MotionModel):
 
 
     def validParams(self, motion_params):
-        H = np.reshape(np.append(motion_params, 1.0), (3,3)) + np.eye(3,3)
+        H = np.reshape(np.append(motion_params, 1.0), (3,3))
 
         singular_values = cv2.SVDecomp(H)[0]
         rank = np.sum[singular_values > 1.10-6]
@@ -291,3 +264,5 @@ class MotionHomography8P(MotionModel):
         detB = np.linalg.det(mB)
 
         return detA * detB >= 0.
+
+

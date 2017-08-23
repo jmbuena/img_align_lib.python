@@ -136,3 +136,10 @@ class ObjectModel:
     @abc.abstractmethod
     def getNumOfReferenceCoords(self):
         return
+
+    @abc.abstractmethod
+    def convertFeaturesToImage(self, features):
+        """
+        Converts the features (of the size of template points) to an image in order to visualize it.
+        """
+        return

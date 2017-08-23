@@ -42,6 +42,7 @@ class TestModelImageGray(unittest.TestCase):
                          [274, 187],
                          [49, 183]], dtype=np.float32)
         H = cv2.getPerspectiveTransform(pts1, pts2)
+        H = H / H[2,2]
 
         coords = self.model.getReferenceCoords()
         homog_coords = np.ones((coords.shape[0], 3), dtype=np.float64)
