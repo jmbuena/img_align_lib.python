@@ -20,7 +20,7 @@ class TestMotionHomography8P(unittest.TestCase):
         self.object_model = ModelImageGray(self.template, equalize=True)
         self.motion_model = MotionHomography8P()
         self.cost_function = CostFunL2ImagesInvComp(self.object_model, self.motion_model, show_debug_info=True)
-        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=30, show_iter=False)
+        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=100, show_iter=True)
 
     def getInitialParams(self, template):
 
@@ -107,7 +107,7 @@ class TestMotionHomography8P(unittest.TestCase):
             cv2.imshow('Video', frame)
             #cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
 
-            if cv2.waitKey() & 0xFF == ord('q'):
+            if cv2.waitKey(20) & 0xFF == ord('q'):
                  break
 
             #i = i + 1
