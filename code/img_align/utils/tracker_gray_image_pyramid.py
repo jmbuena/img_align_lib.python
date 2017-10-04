@@ -1,5 +1,6 @@
 # @brief Tracker
 # @author Jose M. Buenaposada
+# @date 2017/10/04 (modified)
 # @date 2016/11/14
 #
 # Grupo de investigaci'on en Percepci'on Computacional y Rob'otica)
@@ -10,15 +11,15 @@
 
 import numpy as np
 import cv2
-#from img_align.optimizers import Optimizer
+from img_align.optimizers import Optimizer
 
-class Tracker:
+class TrackerGrayImagePyramid:
 
     def __init__(self, optimizer, pyramid_levels=1):
         self.__pyramid_levels = pyramid_levels
         self.__optimizer = optimizer
-        self.__object_model = optimizer.optim_problem.getObjectModel()
-        self.__motion_model = optimizer.optim_problem.getMotionModel()
+        self.__object_model = optimizer.cost_function.object_model
+        self.__motion_model = optimizer.cost_function.motion_model
         num_params = self.__motion_model.getNumParams()
         self.__params = np.zeros((num_params, 1), dtype=np.float64)
         self.__template_coords = self.__object_model.getReferenceCoords()
@@ -59,7 +60,7 @@ class Tracker:
                 break
 
         scale_factor = pow(2.0, len(pyramid)-1)
-        motion_params = self.__motion_model.scaleInputImageResolution(self.__params, 1.0/scale_factor)
+        motion_params = self.__motion_model.scaleParams(self.__params, 1.0/scale_factor)
 
         if self.__optimizer.show_iter:
             print "============= Tracker starts processing frame\n"
@@ -71,7 +72,7 @@ class Tracker:
             motion_params = self.__optimizer.solve(pyramid[i], motion_params)
 
             if i > 0:
-                motion_params = self.__motion_model.scaleInputImageResolution(motion_params, 2.0)
+                motion_params = self.__motion_model.scaleParams(motion_params, 2.0)
 
         if self.__optimizer.show_iter:
              print "============= Tracker ENDS processing frame\n"
@@ -87,7 +88,7 @@ class Tracker:
         :param frame: plot results over this frame
         :return: The results plotted over the input frame with OpenCV commands.
         """
-        image_coords = np.int32(self.__motion_model.transformCoordsToImage(self.__template_coords, self.__params))
+        image_coords = np.int32(self.__motion_model.map(self.__template_coords, self.__params))
 
         for i in range(len(self.__ctrl_lines)):
             index1 = self.__ctrl_lines[i][0]

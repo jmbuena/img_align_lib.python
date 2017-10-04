@@ -1,3 +1,14 @@
+# @brief Object model in direct methods tracking.
+# @author Jose M. Buenaposada
+# @date 2017/08
+#
+# Grupo de investigaci'on en Percepci'on Computacional y Rob'otica)
+# (Perception for Computers & Robots research Group)
+# Facultad de Inform'atica (Computer Science School)
+# Universidad Polit'ecnica de Madrid (UPM) (Madrid Technical University)
+# http://www.dia.fi.upm.es/~pcr
+
+
 import unittest
 import numpy as np
 import cv2
