@@ -1,4 +1,5 @@
 
 # Object models
 from .object_model import ObjectModel
-from .single_image_model import SingleImageModel
+from .model_image_gray import ModelImageGray
+
