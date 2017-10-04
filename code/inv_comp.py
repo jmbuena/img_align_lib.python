@@ -3,17 +3,16 @@ import argparse
 import cv2
 import numpy as np
 import math
-from img_align.motion_models import Homography2DInvComp
-from img_align.object_models import SingleImageModel
-from img_align.optimization_problems import Homography2DInvCompProblem
-from img_align.optimizers import GaussNewtonOptimizer
-from img_align import Tracker
+from img_align.motion_models import MotionHomography8P
+from img_align.object_models import ModelImageGray
+from img_align.cost_functions import CostFunL2ImagesInvComp
+from img_align.optimizers import OptimizerGaussNewton
+from img_align.utils import TrackerGrayImagePyramid
 
 template_points = []
 point_to_add = None
 point_index = True
 moving_point = False
-
 
 def on_mouse_event(event, x, y, flags, frame):
     # grab references to the global variables
@@ -89,8 +88,10 @@ def warpImageWithPerspective(image, template_dims, points):
     TR = np.array([[1., 0., template_width/2.],
                    [0., 1., template_height/2.],
                    [0., 0., 1.]])
-    H2 = np.dot(H, TR) - np.eye(3,3)
-    initial_params = np.copy(np.reshape(H2.T,(9,1)))
+    H2 = np.dot(H, TR)
+    initial_params = np.copy(np.reshape(H2,(9,1)))
+    initial_params = initial_params[0:8, :]
+
 
     return (template_img, initial_params)
 
@@ -151,7 +152,7 @@ def getInteractiveTemplateImg(template_dims, video_source):
     :return:
     """
 
-    print "\n***PLEASE***, Clisk 4 corners of the template in clockwise sense, points: 0, 1, 2, and 3\n"
+    print "\n***PLEASE***, Click 4 corners of the template in clockwise sense, points: 0, 1, 2, and 3\n"
     print "Points **CAN BE MOVED**\n"
     print "IF you have to capture another frame or advance in a video, press key 'n' or any key with \n"
     print "less than 4 points\n\n"
@@ -192,15 +193,14 @@ def main(args):
         template_points = np.array(args.template_corners).reshape((4,2))
         template_img, params = getCommandLineTemplateImg(template_dims, template_points, video_source)
 
-
-    # Setup the optimization problem: object model, motion model and Optimizer
-    motion_model = Homography2DInvComp()
-    object_model = SingleImageModel(template_img, equalize=True)
-    optim_problem = Homography2DInvCompProblem(object_model, motion_model, show_debug_info=False)
-    optim = GaussNewtonOptimizer(optim_problem, max_iter=20, show_iter=False)
+    # Setup the optimization cost function: object model, motion model and Optimizer
+    motion_model = MotionHomography8P()
+    object_model = ModelImageGray(template_img, equalize=True)
+    cost_function = CostFunL2ImagesInvComp(object_model, motion_model, show_debug_info=False)
+    optim = OptimizerGaussNewton(cost_function, max_iter=20, show_iter=False)
 
     # Setup the tracker that uses a pyramid to track fast motion.
-    tracker = Tracker(optimizer=optim, pyramid_levels=1)
+    tracker = TrackerGrayImagePyramid(optimizer=optim, pyramid_levels=2)
     tracker.setMotionParams(params)
 
     cv2.namedWindow('Video')

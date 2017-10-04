@@ -15,23 +15,8 @@ class Optimizer:
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self,
-                 optim_problem,
-                 max_iter=20,
-                 tol_gradient=0.001,
-                 tol_params=0.00001,
-                 show_iter=False):
-        self.optim_problem = optim_problem
-        self.max_iter = max_iter
-        self.tol_gradient = tol_gradient
-        self.tol_params = tol_params
-        self.show_iter = show_iter
-
-        # The 0 index is the first iteration costs and
-        #  the len(iterations_costs)-1 is the
-        #  last iteration cost. Every time
-        self.iter_costs = []
-
+    def __init__(self):
+        return
 
     @abc.abstractmethod
     def solve(self, frame, former_params):
