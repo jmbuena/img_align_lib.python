@@ -43,10 +43,6 @@ class TestMotionHomography8P(unittest.TestCase):
                           [widthDiv2, -heightDiv2],
                           [widthDiv2, heightDiv2],
                           [-widthDiv2, heightDiv2]], dtype=np.float32)
-        # pts2 = np.array([[52, 27],
-        #                  [275, 35],
-        #                  [274, 187],
-        #                  [49, 183]], dtype=np.float32)
         pts2 = np.array([[106, 69],
                          [211, 69],
                          [211, 166],
