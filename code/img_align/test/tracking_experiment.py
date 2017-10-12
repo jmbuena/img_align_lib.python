@@ -10,6 +10,7 @@
 
 import os
 import numpy as np
+import cv2
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
@@ -17,6 +18,7 @@ from xml.dom import minidom
 # import img_align.motion_models
 # import img_align.cost_functions
 import img_align.optimizers
+import img_align.test
 
 class TrackingExperiment:
 
@@ -99,13 +101,25 @@ class TrackingExperiment:
         loaded in the load method
         '''
 
-#        self.img_sequence = ImageSequence(self.sequence_name)
-#        self.img_sequence.load()
+        seq = ImageSequence(self.sequence_name)
+        seq.load()
 
 #        object_model = ObjectModelFactory.getObjectModel(self.object_model_name, self.object_config)
 #        motion_model = MotionModelFactory.getMotionModel(self.motion_model_name, self.motion_config)
 #        cost_function = CostFunctionFactory.getCostFunction(self.motion_model_name, self.all_config)
         self.optimizer = OptimizerFactory.getOptimizer(self.all_config['optimizer_name'], self.all_config)
+
+        seq.open()
+        while seq.next():
+            (frame, gt_corners) = seq.getCurrentFrame()
+             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+             cv2.imshow('Video', frame)
+             if cv2.waitKey(20) & 0xFF == ord('q'):
+                 break
+
+        seq.close()
+        cv2.destroyAllWindows()
 
         # video_source = os.path.join('resources', 'book1.mp4')
         #

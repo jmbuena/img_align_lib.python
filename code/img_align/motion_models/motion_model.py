@@ -96,27 +96,6 @@ class MotionModel:
         """
         return
 
-    # @abc.abstractmethod
-    # def compute_hessian(self, coords, motion_params):
-    #     """
-    #     Computes the second derivative for the motion model, at given coordinates
-    #     and motion params.
-    #     """
-    #     return
-
-    # @abc.abstractmethod
-    # def warpImage(self, image, motion_params, template_coords):
-    #      """
-    #
-    #      Get the grey levels
-    #
-    #      :param image: This is the input image
-    #      :param motion_params: Actual motion model parameters
-    #      :param template_coords: template coords to map with motion params
-    #      :return:
-    #      """
-    #      return
-
     @abc.abstractmethod
     def getIdentityParams(self):
         """
@@ -128,11 +107,9 @@ class MotionModel:
         """
         return
 
-
     @abc.abstractmethod
     def getNumParams(self):
         return
-
 
     def validParams(self, motion_params):
         return True

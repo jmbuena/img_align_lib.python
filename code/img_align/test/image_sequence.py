@@ -11,75 +11,99 @@
 
 import os
 import numpy as np
+import cv2
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 class ImageSequence:
 
-    def __init__(self, exp_file):
-        self.exp_file = exp_file
+    def __init__(self, seq_file):
+        self.seq_file = seq_file
+        self.is_video_file = False
+        self.is_opened = False
+        self.video_file_path = ''
+        self.sequence_frames = []
+        self.current_frame = None
+        self.current_frame_index = 0
+        self.current_corners = None
 
     def load(self):
+
         '''
         :param exp_file: xml file with the sequence configuration
         '''
 
-    #     if os.path.exists(self.exp_file):
-    #         try:
-    #             xml_tree = ET.parse(self.exp_file)
-    #             xml_root = xml_tree.getroot()
-    #
-    #             # Parse the XML file
-    #             print "Parsing XML experiment file {}".format(self.exp_file)
-    #
-    #             # Sequence name
-    #             if xml_root.find('sequence') is not None:
-    #                 self.sequence_name = xml_root.find('sequence').text
-    #
-    #             algorithm_xml = xml_root.find('algorithm')
-    #             if algorithm_xml is not None:
-    #
-    #                 # Motion Model configuration.
-    #                 self.motion_config = self.__parseXMLPart(algorithm_xml, 'motion_model')
-    #
-    #                 # Object Model configuration.
-    #                 self.object_config = self.__parseXMLPart(algorithm_xml, 'object_model')
-    #
-    #                 # Cost Function configuration.
-    #                 self.cost_config = self.__parseXMLPart(algorithm_xml, 'cost_function')
-    #
-    #                 # Optimizer configuration.
-    #                 self.optimizer_config = self.__parseXMLPart(algorithm_xml, 'optimizer')
-    #
-    #                 # Concat all the dictionaries in one
-    #                 self.all_config = dict(self.motion_config, **self.object_config)
-    #                 self.all_config.update(self.cost_config)
-    #                 self.all_config.update(self.optimizer_config)
-    #
-    #         except IOError as e:
-    #             print e.strerror
-    #
-    # def __parseXMLPart(self, xml_root, section_name):
-    #     config_params = dict()
-    #     if xml_root.find(section_name) is not None:
-    #         config_params[section_name + '_name'] = xml_root.find(section_name).find('name').text
-    #         parameters = xml_root.find(section_name).find('parameters')
-    #
-    #         if parameters is None:
-    #             parameters = []
-    #
-    #         for param in parameters:
-    #             param_name = param.find('name').text
-    #             param_type = param.find('type').text
-    #             param_value = param.find('value').text
-    #
-    #             config_params[param_name] = param_value
-    #             if param_type == 'int':
-    #                 config_params[param_name] = int(param_value)
-    #             elif param_type == 'float':
-    #                 config_params[param_name] = float(param_value)
-    #             elif param_type == 'bool':
-    #                 config_params[param_name] = (param_value == 'True') or (param_value == '1')
-    #
-    #     return config_params
+        if not os.path.exists(self.seq_file):
+            raise ValueError('The sequence configuration file {}, not found!'.format(self.seq_file))
 
+        try:
+            xml_tree = ET.parse(self.seq_file)
+            xml_root = xml_tree.getroot()
+
+            # Parse the XML file
+            print "Parsing XML sequence file {}".format(self.seq_file)
+
+            # Check if we are processing a video file (.avi, .mpeg, etc) ground truth
+            video_file = xml_root.find('video_file')
+            if video_file is not None:
+                self.is_video_file = True
+                self.video_file_path = video_file.text
+
+            frames = xml_root.findall('frame')
+
+            for frame in frames:
+                # if it is a video file, then the image_name is the frame number (as text).
+                image_name = frame.find('image').text
+                corners = []
+                if frame.find('ground_truth') is not None:
+                    # Not checking for corners existence nor correctness !!
+                    corners = [float(x) for x in frame.find('ground_truth').find('corners').text.split()]
+                    corners = np.array(corners).reshape(4, 2)
+
+                self.sequence_frames.append((image_name, corners))
+
+        except IOError as e:
+            print e.strerror
+
+    def open(self):
+        '''
+        Open the video file it is the case. If we are dealing with an image sequence with image files on disk, this
+        method does nothing.
+        '''
+        if self.is_video_file:
+            self.video_capture = cv2.VideoCapture(self.video_file_path)
+
+        self.current_frame_index = 0
+        self.is_opened = True
+
+    def close(self):
+        '''
+        Close the video file it is the case. If we are dealing with an image sequence with image files on disk, this
+        method does nothing.
+        '''
+        if self.is_video_file and self.is_opened:
+            self.video_capture.release()
+
+        self.is_opened = False
+
+    def nextFrame(self):
+        '''
+        Move to the next frame to read.
+        '''
+        if not self.is_opened:
+            return
+
+        frame_name, self.current_corners = self.sequence_frames[self.current_frame_index]
+        if self.is_video_file:
+            ret, self.current_frame = self.video_capture.read()
+        else:
+            self.current_frame = cv2.imread(frame_name)
+
+        self.current_frame_index = self.current_frame_index + 1
+
+    def getCurrentFrame(self):
+
+        if not self.is_opened:
+            return None
+
+        return (self.current_frame,  self.current_corners)
