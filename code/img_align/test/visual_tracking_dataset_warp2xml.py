@@ -1,11 +1,12 @@
 
 
 import argparse
+import os
 import csv
 import sys
 import cv2
 import numpy as np
-
+from xml.etree.ElementTree import Element, SubElement
 
 class GroundTruthConstants:
 
@@ -123,24 +124,25 @@ def plot_frame_and_data(frame, corners, gt_constants):
     image_coords = np.int32(corners)
     image_coords = np.vstack((image_coords, image_coords[image_coords.shape[0]-1, :]))
 
+    frame_copy = frame.copy()
+
     for i in range(5):
         next_i = (i + 1) % 5
-        cv2.line(frame,
+        cv2.line(frame_copy,
                  (image_coords[i, 0], image_coords[i, 1]),
                  (image_coords[next_i, 0], image_coords[next_i, 1]),
                  color=(255, 255, 255),  # white color
                  thickness=2)
 
     for j in range(4):
-        cv2.circle(frame,
+        cv2.circle(frame_copy,
                    (image_coords[j, 0], image_coords[j, 1]),
                    3,
                    (0, 0., 255.),  # red color
                    -1)  # filled
 
-    cv2.imshow('Video', frame)
-    cv2.waitKey()
-
+    cv2.imshow('Video', frame_copy)
+    cv2.waitKey(20)
 
 def undistort_frame(frame, gt_constants):
     undistorted = cv2.undistort(frame, gt_constants.K, gt_constants.distort_coeffs)
@@ -162,24 +164,16 @@ def undistort_frame(frame, gt_constants):
     return undistorted
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Convert sequence .warp to .xml format.')
-    parser.add_argument('--warps_file', dest='warps_file', action='store',
-                        help='File .warps from Visual Tracking Dataset')
-    parser.add_argument('--video_file', dest='video_file', action='store',
-                        help='Video file from Visual Tracking Dataset')
-    args = parser.parse_args()
-
-    if args.warps_file is None:
-        sys.exit('Error, missing warps_file argument')
+def generate_sequence_ground_truth_xml(args, imgs_save_path, xml_sequence_file):
 
     if args.video_file is not None:
         video_capture = cv2.VideoCapture(args.video_file)
         cv2.namedWindow('Video')
 
     gt_constants = GroundTruthConstants()
+    xml_root = Element('sequence')
 
+    img_index = 0
     with open(args.warps_file) as f:
         reader = csv.reader(f)
         try:
@@ -194,7 +188,11 @@ if __name__ == '__main__':
                 frame = undistort_frame(frame, gt_constants)
                 corners = convert_warp_data_to_frame(row, gt_constants)
                 plot_frame_and_data(frame, corners, gt_constants)
-                # cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
+
+                # Save frame and ground truth corners
+                cv2.imwrite(os.path.join(imgs_save_path, "{0:05d}.png".format(img_index)), frame)
+
+                img_index = img_index + 1
 
         except csv.Error as e:
             sys.exit('file {}, line {}: {}'.format(args.warps_file, reader.line_num, e))
@@ -203,3 +201,31 @@ if __name__ == '__main__':
         # When everything is done, release the capture
         video_capture.release()
         cv2.destroyAllWindows()
+
+    return xml_root
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Convert sequence .warp to .xml format.')
+    parser.add_argument('--warps_file', dest='warps_file', action='store',
+                        help='File .warps from Visual Tracking Dataset')
+    parser.add_argument('--video_file', dest='video_file', action='store',
+                        help='Video file from Visual Tracking Dataset')
+    args = parser.parse_args()
+
+    if args.warps_file is None:
+        sys.exit('Error, missing warps_file argument')
+
+    print args.video_file
+    video_file_path, video_file_name = os.path.split(args.video_file)
+    path_to_save_imgs = os.path.join(video_file_path, video_file_name + '.images')
+    try:
+        os.mkdir(path_to_save_imgs)
+    except Exception as e:
+        print e.message
+
+    warps_file_path, warps_file_name = os.path.split(args.warps_file)
+    xml_sequence_file = os.path.join(warps_file_path, warps_file_name + '.sequence.xml')
+
+    generate_sequence_ground_truth_xml(args, path_to_save_imgs, xml_sequence_file)
