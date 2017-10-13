@@ -7,12 +7,159 @@ import cv2
 import numpy as np
 
 
-def convert_warp_data_to_frame(warp_text_row):
-    return []
+class GroundTruthConstants:
 
-def plot_frame_and_data(frame, corner):
+    def __init__(self):
+        # From file groundtruth_coordinateframe.h (https://ilab.cs.ucsb.edu/tracking_dataset_ijcv/)
+
+        #  3D "world"  coordinates
+        self.paper_width = 11.0  # inch
+        self.paper_height = 8.5  # inch
+
+        self.marker_margin = 1.0  # margin between markers and paper, inch
+
+        self.dist_markers_x = self.paper_width + 2.0 * self.marker_margin  # inch
+        self.dist_markers_y = self.paper_height + 2.0 * self.marker_margin  # inch
+
+        self.outer_margin = 0.5 # margin around the markers, inch
+
+        # in mm (3D points by rows)
+        self.corners_world_coordinates = np.array([
+            [-165.1, -133.35, 0.0],
+            [-165.1, 133.35, 0.0],
+            [165.1, 133.35, 0.0],
+            [165.1, -133.35, 0.0]
+        ])
+
+        # warped 2D image coordinates
+        self.DPI = 25.4  # i.e. 1 pixel = 1 mm
+        self.st_w = int((self.dist_markers_x + 2.0 * self.outer_margin) * self.DPI)  # size of warped image
+        self.dst_h = int((self.dist_markers_y + 2.0 * self.outer_margin) * self.DPI)
+
+        x1 = float(self.outer_margin * self.DPI)
+        x2 = float((self.outer_margin + self.dist_markers_x) * self.DPI)
+        y1 = float(self.outer_margin * self.DPI)
+        y2 = float((self.outer_margin + self.dist_markers_y) * self.DPI)
+
+        # coordinates of where the corners should be warped to (2D points by rows)
+        self.dst_corners = np.array([
+            [x1, y1],
+            [x1, y2],
+            [x2, y2],
+            [x2, y1],
+            ])
+
+        #self.dst_corners_center = np.array([0.5*(x2-x1), 0.5*(y2-y1)])
+
+        # area of paper
+        self.paper_margin = 0.1  # inner margin(inch)
+        planarROI_x1 = (self.outer_margin + self.marker_margin + self.paper_margin) * self.DPI
+        planarROI_y1 = (self.outer_margin + self.marker_margin + self.paper_margin) * self.DPI
+        planarROI_x2 = (self.outer_margin + self.marker_margin + self.paper_width - self.paper_margin) * self.DPI
+        planarROI_y2 = (self.outer_margin + self.marker_margin + self.paper_height - self.paper_margin) * self.DPI
+
+        self.planarROI = np.array([
+            [planarROI_x1, planarROI_y1],
+            [planarROI_x2, planarROI_y1],
+            [planarROI_x2, planarROI_y2],
+            [planarROI_x1, planarROI_y2]
+        ])
+
+        # area of texture allowed to use
+        self.texture_margin = 1.5  # inner margin(inch)
+
+        textureROI_x1 = (self.outer_margin + self.marker_margin + self.texture_margin) * self.DPI
+        textureROI_y1 = (self.outer_margin + self.marker_margin + self.texture_margin) * self.DPI
+        textureROI_x2 = (self.outer_margin + self.marker_margin + self.paper_width - self.texture_margin) * self.DPI
+        textureROI_y2 = (self.outer_margin + self.marker_margin + self.paper_height - self.texture_margin) * self.DPI
+
+        self.textureROI = np.array([
+            [textureROI_x1, textureROI_y1],
+            [textureROI_x2, textureROI_y1],
+            [textureROI_x2, textureROI_y2],
+            [textureROI_x1, textureROI_y2]
+        ])
+
+        # Intrinsics matrix
+        self.K = np.array([[869.57, 0, 299.748],
+                           [0, 867.528, 237.284],
+                           [0, 0, 1]])
+
+        # Distortion coefficients k1, k2, p1, p2, k3
+        self.distort_coeffs = np.array([-0.0225415, -0.259618, 0.00320736, -0.000551689, 0.000000000])
+
+def convert_warp_data_to_frame(warp_text_row, gt_constants):
+
+    row_list = warp_text_row[0].split()
+    row_array = np.array([float(e) for e in row_list])
+
+    # describe the homography that warps the actual video frame to the canonical reference frame
+    H =  np.reshape(row_array, (3, 3))
+    invH = np.linalg.inv(H)
+
+    # Correction needed to get the right corners in the bricks sequences.
+    T = np.array([[1.0, 0.0, 20.0],
+                  [0.0, 1.0, 0.0],
+                  [0.0, 0.0, 1.0],
+                  ])
+    invH = np.dot(T, invH)
+
+    coords_rows = gt_constants.dst_corners.shape[0]
+    homog_coords = np.ones((coords_rows, 3), dtype=np.float64)
+    #homog_coords[:, 0:2] = gt_constants.dst_corners
+    homog_coords[:, 0:2] = gt_constants.textureROI
+    #homog_coords[:, 0:2] = gt_constants.planarROI
+    homog_new_coords = np.dot(homog_coords, invH.T)
+
+    # Divide by the third homogeneous coordinates to get the cartesian coordinates.
+    third_coord = homog_new_coords[:, 2]
+    homog_new_coords = np.copy(homog_new_coords / third_coord[:, np.newaxis])
+
+    return homog_new_coords[:, 0:2]
+
+
+def plot_frame_and_data(frame, corners, gt_constants):
+
+    image_coords = np.int32(corners)
+    image_coords = np.vstack((image_coords, image_coords[image_coords.shape[0]-1, :]))
+
+    for i in range(5):
+        next_i = (i + 1) % 5
+        cv2.line(frame,
+                 (image_coords[i, 0], image_coords[i, 1]),
+                 (image_coords[next_i, 0], image_coords[next_i, 1]),
+                 color=(255, 255, 255),  # white color
+                 thickness=2)
+
+    for j in range(4):
+        cv2.circle(frame,
+                   (image_coords[j, 0], image_coords[j, 1]),
+                   3,
+                   (0, 0., 255.),  # red color
+                   -1)  # filled
+
     cv2.imshow('Video', frame)
-    cv2.waitKey(20)
+    cv2.waitKey()
+
+
+def undistort_frame(frame, gt_constants):
+    undistorted = cv2.undistort(frame, gt_constants.K, gt_constants.distort_coeffs)
+
+    # cv2.imshow('Video', frame)
+    # cv2.imshow('Undistort', undistorted)
+    #
+    # gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # gray_undistorted = cv2.cvtColor(undistorted, cv2.COLOR_BGR2GRAY)
+    #
+    # diff = np.float32(gray_frame) - np.float32(gray_undistorted)
+    # max_ = diff.max()
+    # min_ = diff.min()
+    # diff = np.uint8(255 * ((diff - min_) / (max_ - min_)))
+    # cv2.imshow('Diff', diff)
+    #
+    # cv2.waitKey()
+
+    return undistorted
 
 
 if __name__ == '__main__':
@@ -25,17 +172,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.warps_file is None:
-        sys.exit('Error, missing watps_file argument')
+        sys.exit('Error, missing warps_file argument')
 
     if args.video_file is not None:
         video_capture = cv2.VideoCapture(args.video_file)
         cv2.namedWindow('Video')
 
+    gt_constants = GroundTruthConstants()
+
     with open(args.warps_file) as f:
         reader = csv.reader(f)
         try:
             for row in reader:
-                print row
                 if args.video_file is not None:
                     # Capture frame-by-frame
                     ret, frame = video_capture.read()
@@ -43,13 +191,13 @@ if __name__ == '__main__':
                 if (frame is None) or (len(row) == 0):
                     break
 
-                corners = convert_warp_data_to_frame(row)
-                plot_frame_and_data(frame, corners)
+                frame = undistort_frame(frame, gt_constants)
+                corners = convert_warp_data_to_frame(row, gt_constants)
+                plot_frame_and_data(frame, corners, gt_constants)
                 # cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
 
         except csv.Error as e:
             sys.exit('file {}, line {}: {}'.format(args.warps_file, reader.line_num, e))
-
 
     if args.video_file is not None:
         # When everything is done, release the capture

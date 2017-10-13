@@ -112,11 +112,11 @@ class TrackingExperiment:
         seq.open()
         while seq.next():
             (frame, gt_corners) = seq.getCurrentFrame()
-             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-             cv2.imshow('Video', frame)
-             if cv2.waitKey(20) & 0xFF == ord('q'):
-                 break
+            cv2.imshow('Video', frame)
+            if cv2.waitKey(20) & 0xFF == ord('q'):
+                break
 
         seq.close()
         cv2.destroyAllWindows()
