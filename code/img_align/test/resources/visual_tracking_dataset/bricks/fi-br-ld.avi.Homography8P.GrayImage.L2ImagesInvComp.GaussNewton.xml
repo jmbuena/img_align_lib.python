@@ -1,5 +1,5 @@
 <test>
-  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/sequence.fi-br-ld.avi.xml</sequence>
+  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/sequence.fi-br-m1.avi.xml</sequence>
   <algorithm>
     <motion>
       <name>Homography8P</name>

@@ -1,12 +1,18 @@
 
 
 import argparse
-import os
 import csv
 import sys
 import cv2
 import numpy as np
-from xml.etree.ElementTree import Element, SubElement
+<<<<<<< HEAD
+import xml.etree.ElementTree as ET
+#from xml.etree.ElementTree import Element, SubElement
+
+from xml.dom import minidom
+=======
+
+>>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
 
 class GroundTruthConstants:
 
@@ -27,9 +33,9 @@ class GroundTruthConstants:
         # in mm (3D points by rows)
         self.corners_world_coordinates = np.array([
             [-165.1, -133.35, 0.0],
-            [-165.1, 133.35, 0.0],
+            [165.1, -133.35, 0.0],
             [165.1, 133.35, 0.0],
-            [165.1, -133.35, 0.0]
+            [-165.1, 133.35, 0.0]
         ])
 
         # warped 2D image coordinates
@@ -45,9 +51,9 @@ class GroundTruthConstants:
         # coordinates of where the corners should be warped to (2D points by rows)
         self.dst_corners = np.array([
             [x1, y1],
-            [x1, y2],
-            [x2, y2],
             [x2, y1],
+            [x2, y2],
+            [x1, y2],
             ])
 
         #self.dst_corners_center = np.array([0.5*(x2-x1), 0.5*(y2-y1)])
@@ -124,25 +130,24 @@ def plot_frame_and_data(frame, corners, gt_constants):
     image_coords = np.int32(corners)
     image_coords = np.vstack((image_coords, image_coords[image_coords.shape[0]-1, :]))
 
-    frame_copy = frame.copy()
-
     for i in range(5):
         next_i = (i + 1) % 5
-        cv2.line(frame_copy,
+        cv2.line(frame,
                  (image_coords[i, 0], image_coords[i, 1]),
                  (image_coords[next_i, 0], image_coords[next_i, 1]),
                  color=(255, 255, 255),  # white color
                  thickness=2)
 
     for j in range(4):
-        cv2.circle(frame_copy,
+        cv2.circle(frame,
                    (image_coords[j, 0], image_coords[j, 1]),
                    3,
                    (0, 0., 255.),  # red color
                    -1)  # filled
 
-    cv2.imshow('Video', frame_copy)
-    cv2.waitKey(20)
+    cv2.imshow('Video', frame)
+    cv2.waitKey()
+
 
 def undistort_frame(frame, gt_constants):
     undistorted = cv2.undistort(frame, gt_constants.K, gt_constants.distort_coeffs)
@@ -164,47 +169,16 @@ def undistort_frame(frame, gt_constants):
     return undistorted
 
 
-def generate_sequence_ground_truth_xml(args, imgs_save_path, xml_sequence_file):
+<<<<<<< HEAD
+def write_xml_to_file(xml_element, file_name):
+    xml_string = ET.tostring(xml_element, 'utf-8')
+    parsed_string = minidom.parseString(xml_string)
+    xml_string_pretty = parsed_string.toprettyxml(indent="  ")
 
-    if args.video_file is not None:
-        video_capture = cv2.VideoCapture(args.video_file)
-        cv2.namedWindow('Video')
-
-    gt_constants = GroundTruthConstants()
-    xml_root = Element('sequence')
-
-    img_index = 0
-    with open(args.warps_file) as f:
-        reader = csv.reader(f)
-        try:
-            for row in reader:
-                if args.video_file is not None:
-                    # Capture frame-by-frame
-                    ret, frame = video_capture.read()
-
-                if (frame is None) or (len(row) == 0):
-                    break
-
-                frame = undistort_frame(frame, gt_constants)
-                corners = convert_warp_data_to_frame(row, gt_constants)
-                plot_frame_and_data(frame, corners, gt_constants)
-
-                # Save frame and ground truth corners
-                cv2.imwrite(os.path.join(imgs_save_path, "{0:05d}.png".format(img_index)), frame)
-
-                img_index = img_index + 1
-
-        except csv.Error as e:
-            sys.exit('file {}, line {}: {}'.format(args.warps_file, reader.line_num, e))
-
-    if args.video_file is not None:
-        # When everything is done, release the capture
-        video_capture.release()
-        cv2.destroyAllWindows()
-
-    return xml_root
-
-
+    fid = open(file_name, 'w')
+    fid.write(xml_string_pretty)
+    fid.close()
+=======
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Convert sequence .warp to .xml format.')
@@ -216,16 +190,127 @@ if __name__ == '__main__':
 
     if args.warps_file is None:
         sys.exit('Error, missing warps_file argument')
+>>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
 
-    print args.video_file
-    video_file_path, video_file_name = os.path.split(args.video_file)
-    path_to_save_imgs = os.path.join(video_file_path, video_file_name + '.images')
-    try:
-        os.mkdir(path_to_save_imgs)
-    except Exception as e:
-        print e.message
+def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, xml_sequence_file):
 
-    warps_file_path, warps_file_name = os.path.split(args.warps_file)
-    xml_sequence_file = os.path.join(warps_file_path, warps_file_name + '.sequence.xml')
+    if video_file is not None:
+        video_capture = cv2.VideoCapture(video_file)
+        cv2.namedWindow('Video')
 
-    generate_sequence_ground_truth_xml(args, path_to_save_imgs, xml_sequence_file)
+    gt_constants = GroundTruthConstants()
+<<<<<<< HEAD
+    xml_root = ET.Element('sequence')
+
+    img_index = 0
+    with open(warps_file) as f:
+=======
+
+    with open(args.warps_file) as f:
+>>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
+        reader = csv.reader(f)
+        try:
+            for row in reader:
+                if video_file is not None:
+                    # Capture frame-by-frame
+                    ret, frame = video_capture.read()
+
+                if (frame is None) or (len(row) == 0):
+                    break
+
+                # Read ground truth corners and display them
+                frame = undistort_frame(frame, gt_constants)
+                corners = convert_warp_data_to_frame(row, gt_constants)
+                plot_frame_and_data(frame, corners, gt_constants)
+<<<<<<< HEAD
+
+                # Save frame
+                save_img_path = os.path.join(imgs_save_path, "{0:05d}.png".format(img_index))
+                cv2.imwrite(save_img_path, frame)
+
+                # Save ground truth corners in the .xml structure to save.
+                xml_frame = ET.SubElement(xml_root, 'frame')
+                xml_img = ET.SubElement(xml_frame, 'image')
+                xml_img.text = save_img_path
+                xml_gt = ET.SubElement(xml_frame, 'ground_truth')
+                xml_corners = ET.SubElement(xml_gt, 'corners')
+                corners_str = " ".join([" {}".format(element) for row in corners for element in row])
+                xml_corners.text = "\n" + corners_str + "\n"
+
+                img_index = img_index + 1
+=======
+                # cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
+>>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
+
+        except csv.Error as e:
+            sys.exit('file {}, line {}: {}'.format(warps_file, reader.line_num, e))
+
+    write_xml_to_file(xml_root, xml_sequence_file)
+
+    if video_file is not None:
+        # When everything is done, release the capture
+        video_capture.release()
+        cv2.destroyAllWindows()
+<<<<<<< HEAD
+
+
+if __name__ == '__main__':
+
+    # parser = argparse.ArgumentParser(description='Convert sequence .warp to .xml format.')
+    # parser.add_argument('--warps_file', dest='warps_file', action='store',
+    #                     help='File .warps from Visual Tracking Dataset')
+    # parser.add_argument('--video_file', dest='video_file', action='store',
+    #                     help='Video file from Visual Tracking Dataset')
+    # args = parser.parse_args()
+    #
+    # if args.warps_file is None:
+    #     sys.exit('Error, missing warps_file argument')
+    #
+    # print args.video_file
+
+    video_files = [
+                   'fi-br-ld.avi',
+                   'fi-br-ls.avi',
+                   'fi-br-m1.avi',
+                   'fi-br-m2.avi',
+                   'fi-br-m3.avi',
+                   'fi-br-m4.avi',
+                   'fi-br-m5.avi',
+                   'fi-br-m6.avi',
+                   'fi-br-m7.avi',
+                   'fi-br-m8.avi',
+                   'fi-br-m9.avi',
+                   'fi-br-pd.avi',
+                   'fi-br-pn.avi',
+                   'fi-br-rt.avi',
+                   'fi-br-uc.avi',
+                   'fi-br-zm.avi'
+                  ]
+
+    video_files_paths = [os.path.join('resources',
+                                      'visual_tracking_dataset',
+                                      'bricks',
+                                      'videos',
+                                      f) for f in video_files]
+
+    warps_files_paths = [os.path.join('resources',
+                                      'visual_tracking_dataset',
+                                      'bricks',
+                                      'ground_truth',
+                                      f + '.warps') for f in video_files]
+
+    for vfp, wfp in zip(video_files_paths, warps_files_paths):
+
+        video_file_path, video_file_name = os.path.split(vfp)
+        path_to_save_imgs = os.path.join(video_file_path, video_file_name + '.images')
+        try:
+            os.mkdir(path_to_save_imgs)
+        except Exception as e:
+            print e.message
+
+        warps_file_path, warps_file_name = os.path.split(wfp)
+        xml_sequence_file = os.path.join(warps_file_path, warps_file_name + '.sequence.xml')
+
+        generate_sequence_ground_truth_xml(vfp, wfp, path_to_save_imgs, xml_sequence_file)
+=======
+>>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
