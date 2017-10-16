@@ -5,14 +5,10 @@ import csv
 import sys
 import cv2
 import numpy as np
-<<<<<<< HEAD
 import xml.etree.ElementTree as ET
 #from xml.etree.ElementTree import Element, SubElement
 
 from xml.dom import minidom
-=======
-
->>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
 
 class GroundTruthConstants:
 
@@ -169,7 +165,6 @@ def undistort_frame(frame, gt_constants):
     return undistorted
 
 
-<<<<<<< HEAD
 def write_xml_to_file(xml_element, file_name):
     xml_string = ET.tostring(xml_element, 'utf-8')
     parsed_string = minidom.parseString(xml_string)
@@ -178,19 +173,6 @@ def write_xml_to_file(xml_element, file_name):
     fid = open(file_name, 'w')
     fid.write(xml_string_pretty)
     fid.close()
-=======
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Convert sequence .warp to .xml format.')
-    parser.add_argument('--warps_file', dest='warps_file', action='store',
-                        help='File .warps from Visual Tracking Dataset')
-    parser.add_argument('--video_file', dest='video_file', action='store',
-                        help='Video file from Visual Tracking Dataset')
-    args = parser.parse_args()
-
-    if args.warps_file is None:
-        sys.exit('Error, missing warps_file argument')
->>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
 
 def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, xml_sequence_file):
 
@@ -199,15 +181,10 @@ def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, x
         cv2.namedWindow('Video')
 
     gt_constants = GroundTruthConstants()
-<<<<<<< HEAD
     xml_root = ET.Element('sequence')
 
     img_index = 0
     with open(warps_file) as f:
-=======
-
-    with open(args.warps_file) as f:
->>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
         reader = csv.reader(f)
         try:
             for row in reader:
@@ -222,7 +199,6 @@ def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, x
                 frame = undistort_frame(frame, gt_constants)
                 corners = convert_warp_data_to_frame(row, gt_constants)
                 plot_frame_and_data(frame, corners, gt_constants)
-<<<<<<< HEAD
 
                 # Save frame
                 save_img_path = os.path.join(imgs_save_path, "{0:05d}.png".format(img_index))
@@ -238,9 +214,6 @@ def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, x
                 xml_corners.text = "\n" + corners_str + "\n"
 
                 img_index = img_index + 1
-=======
-                # cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
->>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
 
         except csv.Error as e:
             sys.exit('file {}, line {}: {}'.format(warps_file, reader.line_num, e))
@@ -251,7 +224,6 @@ def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, x
         # When everything is done, release the capture
         video_capture.release()
         cv2.destroyAllWindows()
-<<<<<<< HEAD
 
 
 if __name__ == '__main__':
@@ -312,5 +284,4 @@ if __name__ == '__main__':
         xml_sequence_file = os.path.join(warps_file_path, warps_file_name + '.sequence.xml')
 
         generate_sequence_ground_truth_xml(vfp, wfp, path_to_save_imgs, xml_sequence_file)
-=======
->>>>>>> parent of 54c8776... Aded saving of individual frames in BRICKS sequences
+
