@@ -1,6 +1,7 @@
 
 
 import argparse
+import os
 import csv
 import sys
 import cv2
@@ -126,24 +127,25 @@ def plot_frame_and_data(frame, corners, gt_constants):
     image_coords = np.int32(corners)
     image_coords = np.vstack((image_coords, image_coords[image_coords.shape[0]-1, :]))
 
+    frame_copy = frame.copy()
+
     for i in range(5):
         next_i = (i + 1) % 5
-        cv2.line(frame,
+        cv2.line(frame_copy,
                  (image_coords[i, 0], image_coords[i, 1]),
                  (image_coords[next_i, 0], image_coords[next_i, 1]),
                  color=(255, 255, 255),  # white color
                  thickness=2)
 
     for j in range(4):
-        cv2.circle(frame,
+        cv2.circle(frame_copy,
                    (image_coords[j, 0], image_coords[j, 1]),
                    3,
                    (0, 0., 255.),  # red color
                    -1)  # filled
 
-    cv2.imshow('Video', frame)
-    cv2.waitKey()
-
+    cv2.imshow('Video', frame_copy)
+    cv2.waitKey(20)
 
 def undistort_frame(frame, gt_constants):
     undistorted = cv2.undistort(frame, gt_constants.K, gt_constants.distort_coeffs)
@@ -274,14 +276,14 @@ if __name__ == '__main__':
     for vfp, wfp in zip(video_files_paths, warps_files_paths):
 
         video_file_path, video_file_name = os.path.split(vfp)
+        print 'Processing video file {}'.format(video_file_name)
         path_to_save_imgs = os.path.join(video_file_path, video_file_name + '.images')
         try:
             os.mkdir(path_to_save_imgs)
         except Exception as e:
-            print e.message
+            print str(e)
 
         warps_file_path, warps_file_name = os.path.split(wfp)
         xml_sequence_file = os.path.join(warps_file_path, warps_file_name + '.sequence.xml')
 
         generate_sequence_ground_truth_xml(vfp, wfp, path_to_save_imgs, xml_sequence_file)
-
