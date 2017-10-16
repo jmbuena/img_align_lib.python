@@ -1,3 +1,4 @@
+
 # @brief Optimization algorithm interface.
 # @author Jose M. Buenaposada
 # @date 2016/11/12
@@ -13,6 +14,7 @@ from img_align.optimizers import Optimizer
 from img_align.cost_functions import CostFunL2Images
 
 class OptimizerGaussNewton(Optimizer):
+
     def __init__(self,
                  cost_function,
                  max_iter=20,

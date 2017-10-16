@@ -1,0 +1,115 @@
+<?xml version="1.0" ?>
+<sequence>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00000.png</image>
+    <ground_truth>
+      <corners>
+ 585.612293356  186.831493862  582.066527833  304.998228446  497.019064545  300.593793298  501.530856677  185.004499387
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00001.png</image>
+    <ground_truth>
+      <corners>
+ 582.074202602  186.540051759  578.524874391  304.555223096  493.790613319  300.167709409  498.281683519  184.766645899
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00002.png</image>
+    <ground_truth>
+      <corners>
+ 573.349637723  186.026379584  569.840132471  303.633996564  485.899355214  299.328344759  490.32223378  184.241276082
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00003.png</image>
+    <ground_truth>
+      <corners>
+ 558.028512085  185.25988009  554.63434532  302.168031232  471.726559762  298.101156201  476.147768449  183.461015782
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00004.png</image>
+    <ground_truth>
+      <corners>
+ 534.892225701  184.575383597  531.900059398  300.553528887  450.269627451  296.602517885  454.617594108  182.961984256
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00005.png</image>
+    <ground_truth>
+      <corners>
+ 504.064350371  183.916352239  501.201138892  298.847225163  420.883428181  295.018766713  425.189637697  182.573022361
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00006.png</image>
+    <ground_truth>
+      <corners>
+ 466.730712404  183.394308041  464.781647467  297.113184468  385.017964069  293.511202961  388.491467317  182.243024736
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00007.png</image>
+    <ground_truth>
+      <corners>
+ 423.336261382  183.061374658  422.76094823  295.00602908  344.285435882  292.035503228  346.369658854  181.77394715
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00008.png</image>
+    <ground_truth>
+      <corners>
+ 377.770817785  181.86569706  377.761650397  293.152762229  299.426612081  290.808964035  300.920334713  180.469318488
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00009.png</image>
+    <ground_truth>
+      <corners>
+ 333.551746428  180.804481774  332.516649287  291.536439099  254.10616911  289.835419699  256.608959049  179.233057646
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00010.png</image>
+    <ground_truth>
+      <corners>
+ 288.276227487  180.085324368  288.326541692  290.653320231  208.806806471  289.576201616  210.170199516  178.380901088
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00011.png</image>
+    <ground_truth>
+      <corners>
+ 241.902323624  179.710873838  241.471483722  290.362473886  160.517168269  289.978096589  162.456304854  177.859646228
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00012.png</image>
+    <ground_truth>
+      <corners>
+ 193.902866145  179.263074835  194.684836932  290.61204412  113.657276104  290.823969649  114.612330772  177.250332516
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-m9.avi.images/00013.png</image>
+    <ground_truth>
+      <corners>
+ 147.742333981  178.715330072  148.383610316  291.231717442  64.5153874665  292.149387815  65.4744004462  176.469001808
+</corners>
+    </ground_truth>
+  </frame>
+</sequence>

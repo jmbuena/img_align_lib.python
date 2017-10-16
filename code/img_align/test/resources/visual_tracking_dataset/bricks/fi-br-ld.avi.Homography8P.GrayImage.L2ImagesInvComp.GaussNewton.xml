@@ -1,0 +1,50 @@
+<test>
+  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/sequence.fi-br-m1.avi.xml</sequence>
+  <algorithm>
+    <motion>
+      <name>Homography8P</name>
+    </motion>
+    <object>
+      <name>ImageGray</name>
+      <parameters>
+        <param>
+          <name>template_image</name>
+          <type>image</type>
+          <value>resources/visual_tracking_dataset/bricks/templates/fi-br-ld.avi.template.png</value>
+        </param>
+        <param>
+          <name>template_equalize</name>
+          <type>bool</type>
+          <value>True</value>
+        </param>
+      </parameters>
+    </object>
+    <cost>
+      <name>L2ImagesInvComp</name>
+      <parameters>
+        <param>
+          <name>show_debug_info</name>
+          <type>bool</type>
+          <value>False</value>
+        </param>
+      </parameters>
+    </cost>
+    <optimizer>
+      <name>GaussNewton</name>
+      <parameters>
+        <param>
+          <name>max_iter</name>
+          <type>int</type>
+          <value>20</value>
+        </param>
+        <param>
+          <name>show_iter</name>
+          <type>bool</type>
+          <value>False</value>
+        </param>
+      </parameters>
+    </optimizer>
+  </algorithm>
+</test>
+
+

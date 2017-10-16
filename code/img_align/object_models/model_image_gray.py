@@ -1,3 +1,4 @@
+
 # @brief Single image object model in direct methods tracking.
 # @author Jose M. Buenaposada
 # @date 2017/08/16

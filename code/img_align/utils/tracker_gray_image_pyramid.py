@@ -121,6 +121,10 @@ class TrackerGrayImagePyramid:
     def getMotionModel(self):
         return self.__motion_model
 
+    def getCurrentCtrlPointsCoords(self):
+        image_coords = np.int32(self.__motion_model.map(self.__template_coords, self.__params))
+        return image_coords[self.__ctrl_indices, :]
+
     def setMaxCostFunctionValue(self, max_cost):
         self.__max_cost = max_cost
 

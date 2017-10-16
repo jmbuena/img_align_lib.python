@@ -1,0 +1,403 @@
+<?xml version="1.0" ?>
+<sequence>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00000.png</image>
+    <ground_truth>
+      <corners>
+ 153.356487983  122.825215854  429.349613394  128.370277584  431.293967648  318.277295673  143.067007249  312.731635834
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00001.png</image>
+    <ground_truth>
+      <corners>
+ 154.533013711  120.00290415  430.55718454  125.568951756  432.395571397  315.430462954  144.254322312  309.774999996
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00002.png</image>
+    <ground_truth>
+      <corners>
+ 155.700488366  119.147870614  431.586040488  124.926719802  433.284915917  314.725502177  145.332276728  308.812155103
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00003.png</image>
+    <ground_truth>
+      <corners>
+ 155.51082896  120.65824462  430.970820603  126.410018561  432.653409282  315.913141026  145.144412927  310.033124074
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00004.png</image>
+    <ground_truth>
+      <corners>
+ 155.764098225  119.769619462  430.384918144  125.669379276  431.922886543  314.54198605  145.375520061  308.52751667
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00005.png</image>
+    <ground_truth>
+      <corners>
+ 156.007409241  119.604701216  429.217901949  125.434794339  430.755647179  313.292015888  145.723746616  307.38560776
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00006.png</image>
+    <ground_truth>
+      <corners>
+ 156.736622363  122.437428345  427.924238648  128.323228097  429.374831193  314.8301394  146.460908243  308.871063053
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00007.png</image>
+    <ground_truth>
+      <corners>
+ 157.767999974  124.572271191  426.338103182  130.217075611  427.850700911  314.909974639  147.759547978  309.194961289
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00008.png</image>
+    <ground_truth>
+      <corners>
+ 158.804130453  123.437198276  424.312898362  129.131390122  425.655607808  311.584368616  148.981758533  305.910071777
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00009.png</image>
+    <ground_truth>
+      <corners>
+ 158.476122768  121.469367011  420.535676206  126.911172909  421.855033677  306.782701621  149.103539121  301.492413438
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00010.png</image>
+    <ground_truth>
+      <corners>
+ 158.578825297  118.380513138  416.85641641  123.57303517  418.093971951  300.706092531  149.597556639  295.695561398
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00011.png</image>
+    <ground_truth>
+      <corners>
+ 160.274169047  118.683052109  414.245131643  125.380452367  414.377422991  299.481471673  150.525222714  293.009470371
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00012.png</image>
+    <ground_truth>
+      <corners>
+ 160.737583793  124.061343074  410.042188057  131.088807388  409.851434605  302.021200555  150.881267237  295.251393055
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00013.png</image>
+    <ground_truth>
+      <corners>
+ 162.847198555  126.763930869  407.303809241  134.267484934  406.556199931  301.905498295  152.820759771  294.606131575
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00014.png</image>
+    <ground_truth>
+      <corners>
+ 163.553904358  126.937010736  403.090325207  134.296404856  402.297491582  298.369402707  153.987298106  291.404706264
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00015.png</image>
+    <ground_truth>
+      <corners>
+ 162.670014358  127.590081336  397.132639406  134.232634097  396.651401749  294.671732212  153.849430761  288.566638602
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00016.png</image>
+    <ground_truth>
+      <corners>
+ 160.851924097  126.416383892  390.30041999  131.817209525  390.446808199  288.60574021  153.172217726  283.908773202
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00017.png</image>
+    <ground_truth>
+      <corners>
+ 162.671085407  125.812983385  387.018035742  131.665833568  386.676370468  284.960419051  154.907652879  279.675918053
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00018.png</image>
+    <ground_truth>
+      <corners>
+ 165.936771619  131.155360601  385.059714769  136.75629172  384.742545033  286.528746078  158.438732029  281.418275949
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00019.png</image>
+    <ground_truth>
+      <corners>
+ 168.353250558  132.556952241  382.533551415  137.855021676  382.283967741  284.171642528  161.338974996  279.395647479
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00020.png</image>
+    <ground_truth>
+      <corners>
+ 171.172380082  129.778638777  380.615866609  134.855768837  380.286352964  277.812071634  164.555218312  273.24777873
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00021.png</image>
+    <ground_truth>
+      <corners>
+ 174.200734401  128.216561513  379.013552532  132.42189997  379.120095688  272.276906238  168.380624751  268.469288323
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00022.png</image>
+    <ground_truth>
+      <corners>
+ 181.82662415  129.010694913  382.08685884  134.419025172  381.210330333  271.224369342  175.331729013  266.059799951
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00023.png</image>
+    <ground_truth>
+      <corners>
+ 185.960226409  129.823000522  381.668902574  135.223476282  380.717098529  268.937323431  179.656575638  263.76114546
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00024.png</image>
+    <ground_truth>
+      <corners>
+ 191.802186998  130.584130342  383.331465459  135.975807494  382.220628054  266.842726908  185.623486792  261.552196889
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00025.png</image>
+    <ground_truth>
+      <corners>
+ 191.980536692  130.880600325  379.56137778  135.400067274  378.928835922  263.32755338  186.587041581  259.158433937
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00026.png</image>
+    <ground_truth>
+      <corners>
+ 196.269053516  128.142865001  379.863414786  133.873566524  378.276166966  259.219574614  190.21630222  253.631612887
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00027.png</image>
+    <ground_truth>
+      <corners>
+ 197.025509746  128.629361875  376.751279658  134.077773735  375.313540013  256.665790827  191.308646921  251.489179734
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00028.png</image>
+    <ground_truth>
+      <corners>
+ 196.462760215  129.792425174  372.422835263  134.651316654  371.284614849  254.581716304  191.315724586  250.104397105
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00029.png</image>
+    <ground_truth>
+      <corners>
+ 194.545012764  129.594263516  366.836456686  133.218245086  366.48611571  250.570711386  190.38100414  247.496908827
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00030.png</image>
+    <ground_truth>
+      <corners>
+ 197.916448949  130.977375632  366.789757783  135.401534456  365.785982626  250.593511541  193.239600407  246.472664071
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00031.png</image>
+    <ground_truth>
+      <corners>
+ 200.915001034  131.589085668  366.776944056  135.782387008  365.833156376  248.914855481  196.515011452  244.983247603
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00032.png</image>
+    <ground_truth>
+      <corners>
+ 206.098938193  132.130206699  369.22095274  136.630482852  368.001875864  247.898389725  201.595619255  243.614552542
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00033.png</image>
+    <ground_truth>
+      <corners>
+ 212.070541562  133.524379303  372.628623429  137.484042622  371.699945905  247.025168902  207.948523933  243.201790635
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00034.png</image>
+    <ground_truth>
+      <corners>
+ 216.277317855  130.269934576  374.619020199  133.616572292  373.998446174  241.657999353  212.640066796  238.394449029
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00035.png</image>
+    <ground_truth>
+      <corners>
+ 222.241660987  129.029053325  378.316200309  133.368225259  376.961102191  239.958522918  217.966432106  235.638791415
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00036.png</image>
+    <ground_truth>
+      <corners>
+ 225.541470936  127.685326388  379.718354341  132.109368418  378.198726552  237.289520071  221.270608966  232.869075843
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00037.png</image>
+    <ground_truth>
+      <corners>
+ 226.678456113  125.93621496  378.88869777  130.508448094  377.284624437  234.308194043  222.407423188  229.863580185
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00038.png</image>
+    <ground_truth>
+      <corners>
+ 227.050467293  124.62747464  377.325317146  129.404988517  375.484645809  231.874524126  222.70495835  227.172441223
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00039.png</image>
+    <ground_truth>
+      <corners>
+ 226.839299441  123.4391029  375.174002298  127.412815813  373.86577874  228.552320261  223.087920253  224.689825608
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00040.png</image>
+    <ground_truth>
+      <corners>
+ 226.06554441  122.758914599  372.410982555  126.533636456  371.22361376  226.317107159  222.598889939  222.721232923
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00041.png</image>
+    <ground_truth>
+      <corners>
+ 223.905716207  122.517858113  368.197788378  126.436255848  366.885168406  224.828212011  220.390863837  221.172487119
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00042.png</image>
+    <ground_truth>
+      <corners>
+ 222.419274482  123.360906566  364.922486856  127.560749186  363.435931406  224.678375573  218.789066461  220.743626925
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00043.png</image>
+    <ground_truth>
+      <corners>
+ 221.542080381  123.370344151  362.31419983  127.533971746  360.840121161  223.48775161  217.97163129  219.59313181
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00044.png</image>
+    <ground_truth>
+      <corners>
+ 219.517197869  123.780049129  358.624907278  128.06093498  357.068333085  222.875432691  215.955787149  218.964751956
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00045.png</image>
+    <ground_truth>
+      <corners>
+ 214.812463066  123.962112524  352.691375727  127.651520618  351.571009476  221.584733735  211.730759206  218.332112673
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00046.png</image>
+    <ground_truth>
+      <corners>
+ 213.148069584  124.650658002  349.830985679  128.367320816  348.729737543  221.422411238  210.108841929  218.17670734
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00047.png</image>
+    <ground_truth>
+      <corners>
+ 213.843641322  126.160911594  349.358677418  130.27809534  347.9538714  222.588052225  210.538666455  218.870182515
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00048.png</image>
+    <ground_truth>
+      <corners>
+ 215.007106692  126.940394107  349.5307657  130.969488879  348.163337682  222.595518288  211.740751079  218.960125748
+</corners>
+    </ground_truth>
+  </frame>
+  <frame>
+    <image>resources/visual_tracking_dataset/bricks/videos/fi-br-zm.avi.images/00049.png</image>
+    <ground_truth>
+      <corners>
+ 215.863805949  127.164813069  349.501539827  131.253892368  348.068308848  222.292648356  212.600553437  218.60235308
+</corners>
+    </ground_truth>
+  </frame>
+</sequence>

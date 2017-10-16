@@ -211,10 +211,11 @@ def main(args):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         tracker.processFrame(gray)
+        tracker.showResults(frame)
 
         # Display the resulting frame
-        tracker.showResults(frame)
         cv2.imshow('Video', frame)
+
 
         if cv2.waitKey(10) & 0xFF == ord('q'):
              break
