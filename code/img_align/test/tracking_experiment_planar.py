@@ -18,7 +18,7 @@ from img_align.optimizers import OptimizerFactory
 from img_align.test import ImageSequence
 from img_align.test import ImageSequenceResults
 
-class TrackingExperiment:
+class TrackingExperimentPlanar:
 
     def __init__(self, exp_file):
         self.exp_file = exp_file

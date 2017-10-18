@@ -10,7 +10,7 @@
 
 import os
 import unittest
-from img_align.test import TrackingExperiment
+from img_align.test import TrackingExperimentPlanar
 from img_align.test import TrackingExperimentsSet
 import img_align.motion_models
 import img_align.object_models
@@ -36,7 +36,7 @@ class TestPlanarTracking(unittest.TestCase):
         exp_path = os.path.join('resources', 'visual_tracking_dataset', 'bricks')
         for exp_file in os.listdir(exp_path):
             if exp_file.endswith('.xml'):
-                e = TrackingExperiment(os.path.join(exp_path, exp_file))
+                e = TrackingExperimentPlanar(os.path.join(exp_path, exp_file))
                 e.load()
                 exp_set.add(e)
 
