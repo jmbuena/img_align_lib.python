@@ -41,7 +41,7 @@ class ImageSequence:
             xml_root = xml_tree.getroot()
 
             # Parse the XML file
-            print "Parsing XML sequence file {}".format(self.seq_file)
+            print "Parsing XML sequence file {}\n".format(self.seq_file)
 
             # Check if we are processing a video file (.avi, .mpeg, etc) ground truth
             video_file = xml_root.find('video_file')
@@ -91,7 +91,10 @@ class ImageSequence:
         Move to the next frame to read.
         '''
         if not self.is_opened:
-            return
+            return False
+
+        if self.current_frame_index >= len(self.sequence_frames):
+            return False
 
         frame_name, self.current_corners = self.sequence_frames[self.current_frame_index]
         if self.is_video_file:
@@ -100,6 +103,8 @@ class ImageSequence:
             self.current_frame = cv2.imread(frame_name)
 
         self.current_frame_index = self.current_frame_index + 1
+
+        return True
 
     def getCurrentFrame(self):
 

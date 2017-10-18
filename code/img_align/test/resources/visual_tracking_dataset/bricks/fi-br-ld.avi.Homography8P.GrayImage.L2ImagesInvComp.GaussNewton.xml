@@ -1,16 +1,23 @@
 <test>
-  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/sequence.fi-br-m1.avi.xml</sequence>
+  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/fi-br-m1.avi.warps.sequence.xml</sequence>
   <algorithm>
-    <motion>
+    <motion_model>
       <name>Homography8P</name>
-    </motion>
-    <object>
+    </motion_model>
+    <object_model>
       <name>ImageGray</name>
       <parameters>
+<!--
         <param>
           <name>template_image</name>
           <type>image</type>
           <value>resources/visual_tracking_dataset/bricks/templates/fi-br-ld.avi.template.png</value>
+        </param>
+-->
+        <param>
+          <name>template_image_shape</name>
+          <type>num_list</type>
+          <value>50 100</value>
         </param>
         <param>
           <name>template_equalize</name>
@@ -18,8 +25,8 @@
           <value>True</value>
         </param>
       </parameters>
-    </object>
-    <cost>
+    </object_model>
+    <cost_function>
       <name>L2ImagesInvComp</name>
       <parameters>
         <param>
@@ -28,7 +35,7 @@
           <value>False</value>
         </param>
       </parameters>
-    </cost>
+    </cost_function>
     <optimizer>
       <name>GaussNewton</name>
       <parameters>

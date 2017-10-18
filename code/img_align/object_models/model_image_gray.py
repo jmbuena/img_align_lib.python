@@ -23,35 +23,38 @@ class ModelImageGray(ObjectModel):
     a Gaussian kernel.
     """
 
-    def __init__(self, template_image, equalize=False):
+    def __init__(self, template_image=None, equalize=False, template_image_shape=None):
         """
         :param template_image:
         :param equalize:
         """
         super(ModelImageGray, self).__init__()
+        self.__image = None
+        self.__template_image_shape = None
+        self.__equalize = equalize
+        self.__gradients = None
+        self.__gray_levels = None
+        self.__coordinates = None
+        self.__min_coords = None
+        self.__max_coords = None
 
-        assert (template_image is not None)
-        rows = template_image.shape[0]
-        cols = template_image.shape[1]
+        self.__control_points_indices = []
+        self.__control_points_lines = []
+
+        if template_image is not None:
+            self.setTemplateImage(template_image)
+        elif template_image_shape is not None:
+            self.setTemplateCoords(template_image_shape)
+
+    def setTemplateCoords(self, template_image_shape):
+
+        rows = template_image_shape[0]
+        cols = template_image_shape[1]
         assert (rows != 0)
         assert (cols != 0)
-        num_pixels = rows * cols
+        self.__template_image_shape = template_image_shape
 
-        if len(template_image.shape) == 3:
-            im_gray = cv2.cvtColor(template_image, cv2.COLOR_RGB2GRAY)
-            self.__image = im_gray
-        else:
-            self.__image = np.copy(template_image)
-
-        self.__image = cv2.GaussianBlur(self.__image, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
-
-        self.__equalize = equalize
-        if self.__equalize:
-            self.__image = cv2.equalizeHist(self.__image)
-
-        self.__gradients = np.float64(computeGrayImageGradients(self.__image))
-        self.__gray_levels = np.float64(self.__image.reshape(num_pixels, 1))
-        self.__coordinates = self.__computeTemplateCoordinates(self.__image)
+        self.__coordinates = self.__computeTemplateCoordinates(template_image_shape)
         self.__min_coords = np.amin(self.__coordinates, axis=0)
         self.__max_coords = np.amax(self.__coordinates, axis=0)
 
@@ -66,6 +69,49 @@ class ModelImageGray(ObjectModel):
             p1 = self.__control_points_indices[i]
             p2 = self.__control_points_indices[(i + 1) % 4]
             self.__control_points_lines.append([p1, p2])
+
+    def setTemplateImage(self, template_image):
+
+        if template_image is None:
+            return
+
+        rows = template_image.shape[0]
+        cols = template_image.shape[1]
+        assert (rows != 0)
+        assert (cols != 0)
+        num_pixels = rows * cols
+
+        if len(template_image.shape) == 3:
+            im_gray = cv2.cvtColor(template_image, cv2.COLOR_RGB2GRAY)
+            self.__image = im_gray
+        else:
+            self.__image = np.copy(template_image)
+
+        self.__image = cv2.GaussianBlur(self.__image, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
+
+        if self.__equalize:
+            self.__image = cv2.equalizeHist(self.__image)
+
+        self.__gradients = np.float64(computeGrayImageGradients(self.__image))
+        self.__gray_levels = np.float64(self.__image.reshape(num_pixels, 1))
+
+        self.setTemplateCoords(self.__image.shape)
+
+        # self.__coordinates = self.__computeTemplateCoordinates(self.__image.shape)
+        # self.__min_coords = np.amin(self.__coordinates, axis=0)
+        # self.__max_coords = np.amax(self.__coordinates, axis=0)
+        #
+        # self.__control_points_indices = []
+        # self.__control_points_indices.append(0)
+        # self.__control_points_indices.append(cols - 1)
+        # self.__control_points_indices.append(cols * rows - 1)
+        # self.__control_points_indices.append(cols * (rows - 1))
+        #
+        # self.__control_points_lines = []
+        # for i in range(4):
+        #     p1 = self.__control_points_indices[i]
+        #     p2 = self.__control_points_indices[(i + 1) % 4]
+        #     self.__control_points_lines.append([p1, p2])
 
     def computeFeaturesGradient(self):
         """
@@ -120,34 +166,42 @@ class ModelImageGray(ObjectModel):
         # to get (0,0) in that corner, we have to add (width/2, height/2) to all coordinates
         # that are going to sample from an image. self.__min_coords are the coordinates of top
         # left corner of the template.
-        floor_x = np.floor(coords[:,0])
-        ceil_x = np.ceil(coords[:,0])
-        floor_y = np.floor(coords[:,1])
-        ceil_y = np.ceil(coords[:,1])
+        floor_x = np.floor(coords[:, 0])
+        ceil_x = np.ceil(coords[:, 0])
+        floor_y = np.floor(coords[:, 1])
+        ceil_y = np.ceil(coords[:, 1])
 
-        g0 = np.zeros((coords.shape[0],1))
-        g1 = np.zeros((coords.shape[0],1))
-        g2 = np.zeros((coords.shape[0],1))
-        g3 = np.zeros((coords.shape[0],1))
+        g0 = np.zeros((coords.shape[0], 1))
+        g1 = np.zeros((coords.shape[0], 1))
+        g2 = np.zeros((coords.shape[0], 1))
+        g3 = np.zeros((coords.shape[0], 1))
 
         l  = (floor_y >= 0) & (ceil_y < im_rows) & (floor_x >= 0) & (ceil_x < im_cols)
-        im_gray_flatten = im_gray.flatten()[:,np.newaxis]
-        g0[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*floor_y[l])])
-        g1[l,:] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*ceil_y[l])])
-        g2[l,:] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*ceil_y[l])])
-        g3[l,:] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*floor_y[l])])
+        im_gray_flatten = im_gray.flatten()[:, np.newaxis]
+        g0[l, :] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*floor_y[l])])
+        g1[l, :] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*ceil_y[l])])
+        g2[l, :] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*ceil_y[l])])
+        g3[l, :] = np.float32(im_gray_flatten[np.int32(ceil_x[l] + im_cols*floor_y[l])])
 
-        x_delta = coords[:,0] - floor_x[:]
-        x_delta = x_delta[:,np.newaxis]
-        y_delta = coords[:,1] - floor_y[:]
-        y_delta = y_delta[:,np.newaxis]
+        x_delta = coords[:, 0] - floor_x[:]
+        x_delta = x_delta[:, np.newaxis]
+        y_delta = coords[:, 1] - floor_y[:]
+        y_delta = y_delta[:, np.newaxis]
 
         g01 = g0 + (g1 - g0)*x_delta
         g23 = g2 + (g3 - g2)*y_delta
 
         features = g01 + (g23 - g01)*y_delta
 
-        warped_img = np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
+#        warped_img = np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
+        warped_img = np.uint8(np.reshape(features, (self.__template_image_shape[0], self.__template_image_shape[1])))
+
+        # If the template image is not set in the constructor then the template image is
+        # set to the gray levels of the image and coordinates of the first call to
+        # computeImageFeatures
+        if self.__image is None:
+            self.setTemplateImage(warped_img)
+
         warped_img = cv2.GaussianBlur(warped_img, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
         if self.__equalize:
             warped_img = np.float64(cv2.equalizeHist(warped_img))
@@ -216,12 +270,12 @@ class ModelImageGray(ObjectModel):
 
         return np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
 
-    def __computeTemplateCoordinates(self, gray_image):
+    def __computeTemplateCoordinates(self, gray_image_shape):
 
-        assert (len(gray_image.shape) < 3)
+        assert (len(gray_image_shape) < 3)
 
-        rows = gray_image.shape[0]
-        cols = gray_image.shape[1]
+        rows = gray_image_shape[0]
+        cols = gray_image_shape[1]
         width_div_2 = round(cols / 2.0)
         height_div_2 = round(rows / 2.0)
 

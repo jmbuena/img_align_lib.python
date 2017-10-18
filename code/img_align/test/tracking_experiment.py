@@ -12,13 +12,9 @@ import os
 import numpy as np
 import cv2
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
 
-# import img_align.object_models
-# import img_align.motion_models
-# import img_align.cost_functions
-import img_align.optimizers
-import img_align.test
+from img_align.optimizers import OptimizerFactory
+from img_align.test import ImageSequence
 
 class TrackingExperiment:
 
@@ -30,6 +26,7 @@ class TrackingExperiment:
         self.optimizer_config = None
         self.all_config = None
         self.sequence_name = None
+        self.optimizer = None
 
     def load(self):
         '''
@@ -42,7 +39,7 @@ class TrackingExperiment:
                 xml_root = xml_tree.getroot()
 
                 # Parse the XML file
-                print "Parsing XML experiment file {}".format(self.exp_file)
+                print "Parsing XML experiment file {}\n".format(self.exp_file)
 
                 # Sequence name
                 if xml_root.find('sequence') is not None:
@@ -92,8 +89,68 @@ class TrackingExperiment:
                     config_params[param_name] = float(param_value)
                 elif param_type == 'bool':
                     config_params[param_name] = (param_value == 'True') or (param_value == '1')
+                elif param_type == 'num_list':
+                    num_list = [float(x) for x in param_value.split()]
+                    config_params[param_name] = np.array(num_list)
 
         return config_params
+
+    def computeImageCoords(self, motion_params):
+        ref_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
+        ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
+        image_coords = np.int32(self.optimizer.cost_function.motion_model.map(ref_coords, motion_params))
+
+        # Make a dictionary for coordinates changes. The ref_coords are all over the template and ctrl points are only
+        # 4 in the case of images object models. We like to change ctrl_lines indices to move only over the ctrl points
+        # in an np.ndarray of 4 points, not over all the ref_coords indices.
+        dict_ctrl_points = dict()
+        for i in range(len(ctrl_indices)):
+            dict_ctrl_points[ctrl_indices[i]] = i
+
+        ctrl_lines_new = list(ctrl_lines) # copy of first list (list of lists)
+        for i in range(len(ctrl_lines)):
+            ctrl_lines_new[i] = list(ctrl_lines[i]) # copy of i-th internal
+            ctrl_lines_new[i][0] = dict_ctrl_points[ctrl_lines[i][0]]
+            ctrl_lines_new[i][1] = dict_ctrl_points[ctrl_lines[i][1]]
+
+        return image_coords[ctrl_indices], ctrl_lines_new
+
+    def showResults(self, frame, image_coords, coords_lines, ground_truth_display=False):
+        """
+        Show the tracking results over the given frame
+
+        :param frame: plot results over this frame
+        :param image_coords:
+        """
+        if not ground_truth_display:
+            line_color = (255, 255, 255)
+            line_thickness = 3
+            ctrl_point_color = (0, 0, 255)
+            ctrl_point_radius = 4
+        else:
+            line_color = (0, 255, 255)
+            line_thickness = 2
+            ctrl_point_color = (125, 0, 125)
+            ctrl_point_radius = 2
+
+        for i in range(len(coords_lines)):
+            index1 = coords_lines[i][0]
+            index2 = coords_lines[i][1]
+
+            cv2.line(frame,
+                     (int(image_coords[index1, 0]), int(image_coords[index1, 1])),
+                     (int(image_coords[index2, 0]), int(image_coords[index2, 1])),
+                     color=line_color,
+                     thickness=line_thickness)
+
+        for j in range(image_coords.shape[0]):
+            cv2.circle(frame,
+                       (int(image_coords[j, 0]), int(image_coords[j, 1])),
+                       ctrl_point_radius,
+                       ctrl_point_color,
+                       -1)  # filled
+
+        return image_coords
 
     def run(self):
         '''
@@ -104,15 +161,26 @@ class TrackingExperiment:
         seq = ImageSequence(self.sequence_name)
         seq.load()
 
-#        object_model = ObjectModelFactory.getObjectModel(self.object_model_name, self.object_config)
-#        motion_model = MotionModelFactory.getMotionModel(self.motion_model_name, self.motion_config)
-#        cost_function = CostFunctionFactory.getCostFunction(self.motion_model_name, self.all_config)
-        self.optimizer = OptimizerFactory.getOptimizer(self.all_config['optimizer_name'], self.all_config)
+        optimizer_factory = OptimizerFactory()
+        self.optimizer = optimizer_factory.getOptimizer(self.all_config)
 
+        params = None
         seq.open()
-        while seq.next():
+        while seq.nextFrame():
             (frame, gt_corners) = seq.getCurrentFrame()
+            if params is None:
+                template_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
+                ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
+                template_ctrl_coords = template_coords[ctrl_indices, :]
+
+                params = self.optimizer.cost_function.motion_model.computeParams(template_ctrl_coords, gt_corners)
+
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            params = self.optimizer.solve(gray, params)
+            estimated_corners, ctrl_lines = self.computeImageCoords(params)
+            self.showResults(frame, estimated_corners, ctrl_lines)
+            self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
 
             cv2.imshow('Video', frame)
             if cv2.waitKey(20) & 0xFF == ord('q'):
@@ -120,33 +188,4 @@ class TrackingExperiment:
 
         seq.close()
         cv2.destroyAllWindows()
-
-        # video_source = os.path.join('resources', 'book1.mp4')
-        #
-        # cv2.namedWindow('Video')
-        # video_capture = cv2.VideoCapture(video_source)
-        # params = self.initial_params
-        # #i = 1
-        # while True:
-        #     # Capture frame-by-frame
-        #     ret, frame = video_capture.read()
-        #     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        #
-        #     #tracker.processFrame(gray)
-        #     params = self.optimizer.solve(frame, params)
-        #     self.showResults(frame, params)
-        #
-        #     # Display the resulting frame
-        #     #tracker.showResults(frame)
-        #     cv2.imshow('Video', frame)
-        #     #cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
-        #
-        #     if cv2.waitKey(20) & 0xFF == ord('q'):
-        #          break
-        #
-        #     #i = i + 1
-        # # When everything is done, release the capture
-        # video_capture.release()
-        # cv2.destroyAllWindows()
-
 

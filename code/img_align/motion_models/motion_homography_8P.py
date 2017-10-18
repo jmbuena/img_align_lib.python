@@ -14,6 +14,7 @@ import numpy as np
 import cv2
 from img_align.motion_models import MotionModel
 
+
 class MotionHomography8P(MotionModel):
     """
     A class for the 2D homography (8 parameters) motion model.
@@ -47,7 +48,6 @@ class MotionHomography8P(MotionModel):
         super(MotionHomography8P, self).__init__()
         return
 
-
     def invMap(self, coords, motion_params):
         """
         Using the motion_params, transform the input coords from image
@@ -60,13 +60,12 @@ class MotionHomography8P(MotionModel):
         :param motion_params: current motion params from template to image
         :return: np array with the updated coords.
         """
-        H = np.append(motion_params, 1.0).reshape(3,3)
+        H = np.append(motion_params, 1.0).reshape(3, 3)
         invH = np.linalg.pinv(H)
-        inv_params = np.copy(np.reshape(invH, (9,1)))
-        inv_params = inv_params[0:8,:]
+        inv_params = np.copy(np.reshape(invH, (9, 1)))
+        inv_params = inv_params[0:8, :]
 
         return self.map(coords, inv_params)
-
 
     def map(self, coords, motion_params):
         """
@@ -80,18 +79,18 @@ class MotionHomography8P(MotionModel):
 
         coords_cols = coords.shape[1]
         coords_rows = coords.shape[0]
-        assert(coords_cols == 2); # We need two dimensional coordinates
+        assert(coords_cols == 2)  # We need two dimensional coordinates
 
-        H = np.reshape(np.append(motion_params,1.0), (3,3))
+        H = np.reshape(np.append(motion_params, 1.0), (3, 3))
         homog_coords = np.ones((coords_rows, 3), dtype=np.float64)
-        homog_coords[:,0:2] = coords
+        homog_coords[:, 0:2] = coords
         homog_new_coords = np.dot(homog_coords, H.T)
 
         # Divide by the third homogeneous coordinates to get the cartesian coordinates.
-        third_coord = homog_new_coords[:,2]
+        third_coord = homog_new_coords[:, 2]
         homog_new_coords = np.copy(homog_new_coords / third_coord[:, np.newaxis])
 
-        return homog_new_coords[:,0:2]
+        return homog_new_coords[:, 0:2]
 
     def getCompositionParams(self, motion_params1, motion_params2):
         """
@@ -105,14 +104,14 @@ class MotionHomography8P(MotionModel):
         :return: np array with the updated motion parameters.
         """
 
-        H1 = np.reshape(np.append(motion_params1,1.0), (3,3))
-        H2 = np.reshape(np.append(motion_params2,1.0), (3,3))
+        H1 = np.reshape(np.append(motion_params1,  1.0), (3, 3))
+        H2 = np.reshape(np.append(motion_params2, 1.0), (3, 3))
 
-        Hcomp = np.dot(H1,H2)
-        Hcomp = Hcomp / Hcomp[2,2] # We make again 1 the coordinate [2, 2] in Hcomp.
+        Hcomp = np.dot(H1, H2)
+        Hcomp = Hcomp / Hcomp[2, 2] # We make again 1 the coordinate [2, 2] in Hcomp.
 
-        composition_params = np.copy(np.reshape(Hcomp, (9,1)))
-        return composition_params[0:8,:]
+        composition_params = np.copy(np.reshape(Hcomp, (9, 1)))
+        return composition_params[0:8, :]
 
 
     def getCompositionWithInverseParams(self, motion_params1, motion_params2):
@@ -127,15 +126,14 @@ class MotionHomography8P(MotionModel):
         :return: np array with the updated motion parameters.
         """
 
-        H1 = np.reshape(np.append(motion_params1,1.0), (3,3))
-        H2 = np.reshape(np.append(motion_params2,1.0), (3,3))
+        H1 = np.reshape(np.append(motion_params1, 1.0), (3, 3))
+        H2 = np.reshape(np.append(motion_params2, 1.0), (3, 3))
 
         Hcomp = np.dot(H1, np.linalg.pinv(H2))
-        Hcomp = Hcomp / Hcomp[2,2] # We make again 1 the coordinate [2, 2] in Hcomp.
+        Hcomp = Hcomp / Hcomp[2, 2]  # We make again 1 the coordinate [2, 2] in Hcomp.
 
-        composition_params = np.copy(np.reshape(Hcomp, (9,1)))
-        return composition_params[0:8,:]
-
+        composition_params = np.copy(np.reshape(Hcomp, (9, 1)))
+        return composition_params[0:8, :]
 
     def computeJacobian(self, coords, motion_params):
         """
@@ -151,9 +149,9 @@ class MotionHomography8P(MotionModel):
         """
         coords_cols = coords.shape[1]
         coords_rows = coords.shape[0]
-        assert(coords_cols == 2); # We need two dimensional coordinates
+        assert(coords_cols == 2) # We need two dimensional coordinates
 
-        H = np.reshape(np.append(motion_params,1.0), (3,3))
+        H = np.reshape(np.append(motion_params, 1.0), (3, 3))
 
         # As we start from cartesian coordinates, the 3rd coordinate in
         # the conversion to homogeneous is always 1.
@@ -169,8 +167,8 @@ class MotionHomography8P(MotionModel):
             Jp = np.array([[1., 0., -x], [0., 1., -y]])
 
             # Jf is the derivative of f(x_h, p) w.r.t. p, evaluated at motion_params:
-            Jf = np.array([[x , y , 1., 0., 0., 0., 0., 0.],
-                           [0., 0., 0., x , y , 1., 0., 0.],
+            Jf = np.array([[x,  y,  1., 0., 0., 0., 0., 0.],
+                           [0., 0., 0., x,  y,  1., 0., 0.],
                            [0., 0., 0., 0., 0., 0., x , y]])
 
             # The Jacobian of f with respect to motion parameters is
@@ -179,7 +177,6 @@ class MotionHomography8P(MotionModel):
 
         return jacobians_mat
 
-
     def scaleParams(self, motion_params, scale):
         """
         :param motion_params: current params
@@ -187,50 +184,59 @@ class MotionHomography8P(MotionModel):
         :return: np array with the updated motion params to the new image scale
         """
 
-        H = np.reshape(np.append(motion_params, 1.0), (3,3))
-        S = np.eye(3,3)
-        S[0,0] = scale
-        S[1,1] = scale
+        H = np.reshape(np.append(motion_params, 1.0), (3, 3))
+        S = np.eye(3, 3)
+        S[0, 0] = scale
+        S[1, 1] = scale
         newH = np.dot(S, H)
-        new_params = np.copy(np.reshape(newH, (9,1)))
-        return new_params[0:8,:]
-
+        new_params = np.copy(np.reshape(newH, (9, 1)))
+        return new_params[0:8, :]
 
     def getIdentityParams(self):
         """
-        :return:
+        :return the motion params that does not change the coordinates in map:
         """
-        return np.array([[1.],[0.],[0.],
-                         [0.],[1.],[0.],
-                         [0.],[0.]])
+        return np.array([[1.], [0.], [0.],
+                         [0.], [1.], [0.],
+                         [0.], [0.]])
 
+    def computeParams(self, points_orig, points_dest):
+        """
+        :param points_orig
+        :param points_dest
+        :return the motion params that maps points_orig into points_dest:
+        """
+        H = cv2.getPerspectiveTransform(np.float32(points_orig), np.float32(points_dest))
+        H = H / H[2, 2]
+
+        params = np.copy(np.reshape(H, (9, 1)))
+        params = params[0:8, :]
+
+        return params
 
     def getNumParams(self):
         return 8
 
-
     def validParams(self, motion_params):
-        H = np.reshape(np.append(motion_params, 1.0), (3,3))
+        H = np.reshape(np.append(motion_params, 1.0), (3, 3))
 
         singular_values = cv2.SVDecomp(H)[0]
-        rank = np.sum[singular_values > 1.10-6]
+        rank = np.sum(singular_values > 1.10-6)
 
         points = np.array([[0., 0.],
                            [100., 0.],
                            [100., 100.],
                            [0., 100.]])
 
-        transformed_points = np.copy(points)
         transformed_points = self.map(points, motion_params)
         detH = np.linalg.det(H)
 
         #(detH < 1./10.) or (detH > 10.) or
-        return (rank>=3) and\
+        return (rank >= 3) and\
                (self.__consistentPoints(points, transformed_points, 0, 1, 2)) and\
                (self.__consistentPoints(points, transformed_points, 1, 2, 3)) and\
                (self.__consistentPoints(points, transformed_points, 0, 2, 3)) and\
                (self.__consistentPoints(points, transformed_points, 0, 1, 3))
-
 
     def __consistentPoints(self, points, transformed_points, t1, t2, t3):
         """

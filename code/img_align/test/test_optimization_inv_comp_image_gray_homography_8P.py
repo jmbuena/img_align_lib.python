@@ -31,7 +31,7 @@ class TestMotionHomography8P(unittest.TestCase):
         self.object_model = ModelImageGray(self.template, equalize=True)
         self.motion_model = MotionHomography8P()
         self.cost_function = CostFunL2ImagesInvComp(self.object_model, self.motion_model, show_debug_info=True)
-        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=100, show_iter=True)
+        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=100, show_iter=False)
 
     def getInitialParams(self, template):
 
@@ -89,9 +89,6 @@ class TestMotionHomography8P(unittest.TestCase):
                        (0, 0., 255.),  # red color
                        -1)  # filled
 
-        return
-
-
     def test_inv_comp(self):
 
         video_source = os.path.join('resources', 'book1.mp4')
@@ -100,7 +97,7 @@ class TestMotionHomography8P(unittest.TestCase):
         video_capture = cv2.VideoCapture(video_source)
         params = self.initial_params
         #i = 1
-        while True:
+        while False:
             # Capture frame-by-frame
             ret, frame = video_capture.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -118,6 +115,7 @@ class TestMotionHomography8P(unittest.TestCase):
                  break
 
             #i = i + 1
+
         # When everything is done, release the capture
         video_capture.release()
         cv2.destroyAllWindows()

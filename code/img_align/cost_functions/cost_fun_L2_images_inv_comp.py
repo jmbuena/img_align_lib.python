@@ -15,6 +15,7 @@ import math
 import cv2
 from img_align.cost_functions import CostFunL2Images
 
+
 class CostFunL2ImagesInvComp(CostFunL2Images):
 
     """
@@ -38,9 +39,13 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         self.__initialized = False
         self.__J = None
         self.__invJ = None
-        self.__setupMatrices()
 
-        return
+        # NOTE: Here we do not initialize the constant matrices of the Inverse Compositional. They
+        # will be only once when needed by calling self.__setupMatrices(). The matrices can not be
+        # initialized because Object Model some times are initialized in the first image of a sequence,
+        # and with them initialized (i.e. the image template is cropped from first image) we can initialize
+        # here the constant matrices.
+
 
     def computeJacobian(self, motion_params):
         """
@@ -156,8 +161,8 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         """
 
         # Compute the compositional update of the motion params, note that the update is done
-        # with the parameters incriment plus the identity params (this is necessary whenever the
-        # motion model has no 0 identity motion paramenters).
+        # with the parameters increment plus the identity params (this is necessary whenever the
+        # motion model has no 0 identity motion parameters).
         identity_params = self.motion_model.getIdentityParams()
         return self.motion_model.getCompositionWithInverseParams(motion_params, inc_params + identity_params)
 
@@ -165,32 +170,31 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         template_coords = self.object_model.getReferenceCoords()
         J = np.zeros((template_coords.shape[0], self.motion_model.getNumParams()), dtype=np.float64)
-        zero_params = np.zeros(self.motion_model.getNumParams())
         gradients = self.object_model.computeFeaturesGradient()
 
         if self.show_debug_info_jacobians:
-            max_ = np.max(gradients[:,0])
-            min_ = np.min(gradients[:,0])
-            g_x = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:,0]) - min_)/(max_- min_))
-            max_ = np.max(gradients[:,1])
-            min_ = np.min(gradients[:,1])
-            g_y = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:,1]) - min_) / (max_ - min_))
+            max_ = np.max(gradients[:, 0])
+            min_ = np.min(gradients[:, 0])
+            g_x = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:, 0]) - min_)/(max_- min_))
+            max_ = np.max(gradients[:, 1])
+            min_ = np.min(gradients[:, 1])
+            g_y = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:, 1]) - min_) / (max_ - min_))
             cv2.imshow('g_x', np.uint8(g_x))
             cv2.imshow('g_y', np.uint8(g_y))
 
         # The Jacobian of the motion model, in Inverse Compositional, should be instantiated in the
-        # motion model indentity params.
+        # motion model identity params.
         identity_params = self.motion_model.getIdentityParams()
         Jf = self.motion_model.computeJacobian(template_coords, identity_params)
 
         for i in range(Jf.shape[2]):
-           J[i,:] = np.dot(gradients[i,:], Jf[:,:,i])
+            J[i, :] = np.dot(gradients[i, :], Jf[:, :, i])
 
         if self.show_debug_info_jacobians:
             for j in range(J.shape[1]):
-                max_ = np.max(J[:,j])
-                min_ = np.min(J[:,j])
-                J_img = self.object_model.convertFeaturesToImage(255*(J[:,j]-min_)/(max_-min_))
+                max_ = np.max(J[:, j])
+                min_ = np.min(J[:, j])
+                J_img = self.object_model.convertFeaturesToImage(255*(J[:, j]-min_)/(max_-min_))
                 cv2.imshow('J{}'.format(j), np.uint8(J_img))
 
         return J

@@ -97,13 +97,21 @@ class MotionModel:
         return
 
     @abc.abstractmethod
+    def computeParams(self, points_orig, points_dest):
+        """
+        :param points_orig
+        :param points_dest
+        :return the motion params that maps points_orig into points_dest:
+        """
+
+    @abc.abstractmethod
     def getIdentityParams(self):
         """
         Get the motion params that maps coords in the same coords.
 
             motion_model.map(coords, motion_params) returns coords
 
-        :return:
+        :return the identity parameter numpy array:
         """
         return
 

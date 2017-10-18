@@ -15,6 +15,7 @@ import img_align.cost_functions
 import img_align.optimizers
 from img_align.test import TrackingExperiment
 
+
 class TrackingExperimentsSet:
 
     def __init__(self):

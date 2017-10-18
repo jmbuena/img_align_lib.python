@@ -13,6 +13,7 @@ import numpy as np
 from img_align.optimizers import Optimizer
 from img_align.cost_functions import CostFunL2Images
 
+
 class OptimizerGaussNewton(Optimizer):
 
     def __init__(self,

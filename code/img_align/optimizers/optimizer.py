@@ -11,6 +11,7 @@
 
 import abc
 
+
 class Optimizer:
 
     __metaclass__ = abc.ABCMeta

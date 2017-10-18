@@ -10,8 +10,10 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import abc
-import img_align.motion_models
-import img_align.object_models
+from img_align.motion_models import MotionModelFactory
+from img_align.object_models import ObjectModelFactory
+from img_align.cost_functions import CostFunL2ImagesInvComp
+
 
 class CostFunctionFactory:
     """
@@ -39,8 +41,10 @@ class CostFunctionFactory:
         if (cost_function_name == '') or (cost_function_name is None):
             return ValueError('cost_function_name param is empty')
 
-        object_model = ObjectModelFactory.getObjectModel(config)
-        motion_model = MotionModelFactory.getMotionModel(config)
+        om_factory = ObjectModelFactory()
+        object_model = om_factory.getObjectModel(config)
+        mm_factory = MotionModelFactory()
+        motion_model = mm_factory.getMotionModel(config)
 
         if cost_function_name == 'L2ImagesInvComp':
             return CostFunL2ImagesInvComp(object_model, motion_model, show_debug_info=False)
