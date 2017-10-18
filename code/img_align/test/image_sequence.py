@@ -13,7 +13,6 @@ import os
 import numpy as np
 import cv2
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
 
 class ImageSequence:
 
@@ -24,6 +23,7 @@ class ImageSequence:
         self.video_file_path = ''
         self.sequence_frames = []
         self.current_frame = None
+        self.current_frame_name = ''
         self.current_frame_index = 0
         self.current_corners = None
 
@@ -96,11 +96,11 @@ class ImageSequence:
         if self.current_frame_index >= len(self.sequence_frames):
             return False
 
-        frame_name, self.current_corners = self.sequence_frames[self.current_frame_index]
+        self.current_frame_name, self.current_corners = self.sequence_frames[self.current_frame_index]
         if self.is_video_file:
             ret, self.current_frame = self.video_capture.read()
         else:
-            self.current_frame = cv2.imread(frame_name)
+            self.current_frame = cv2.imread(self.current_frame_name)
 
         self.current_frame_index = self.current_frame_index + 1
 
@@ -111,4 +111,4 @@ class ImageSequence:
         if not self.is_opened:
             return None
 
-        return (self.current_frame,  self.current_corners)
+        return (self.current_frame,  self.current_corners, self.current_frame_name)

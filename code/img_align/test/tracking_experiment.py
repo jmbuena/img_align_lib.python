@@ -9,12 +9,14 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import os
+import errno
 import numpy as np
 import cv2
 import xml.etree.ElementTree as ET
 
 from img_align.optimizers import OptimizerFactory
 from img_align.test import ImageSequence
+from img_align.test import ImageSequenceResults
 
 class TrackingExperiment:
 
@@ -26,7 +28,11 @@ class TrackingExperiment:
         self.optimizer_config = None
         self.all_config = None
         self.sequence_name = None
+        self.sequence_results_name = None
         self.optimizer = None
+        self.show_results = False
+        self.test_name = None
+        self.results_dir = None
 
     def load(self):
         '''
@@ -41,9 +47,24 @@ class TrackingExperiment:
                 # Parse the XML file
                 print "Parsing XML experiment file {}\n".format(self.exp_file)
 
+                # test name
+                if xml_root.find('experiment_name') is not None:
+                    self.test_name = xml_root.find('experiment_name').text
+
                 # Sequence name
                 if xml_root.find('sequence') is not None:
                     self.sequence_name = xml_root.find('sequence').text
+
+                # Execution params
+                if xml_root.find('execution_parameters') is not None:
+                    self.results_dir = xml_root.find('execution_parameters').find('save_dir').text
+                    show_results_str = xml_root.find('execution_parameters').find('show').text
+                    self.show_results = (show_results_str.upper() == "TRUE" or show_results_str == "1")
+
+                head, tail = os.path.splitext(self.sequence_name)
+                head, sequence_name = os.path.split(head)
+
+                self.sequence_results_name = os.path.join(self.results_dir, sequence_name + '.results.xml')
 
                 algorithm_xml = xml_root.find('algorithm')
                 if algorithm_xml is not None:
@@ -98,7 +119,7 @@ class TrackingExperiment:
     def computeImageCoords(self, motion_params):
         ref_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
         ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
-        image_coords = np.int32(self.optimizer.cost_function.motion_model.map(ref_coords, motion_params))
+        image_coords = self.optimizer.cost_function.motion_model.map(ref_coords, motion_params)
 
         # Make a dictionary for coordinates changes. The ref_coords are all over the template and ctrl points are only
         # 4 in the case of images object models. We like to change ctrl_lines indices to move only over the ctrl points
@@ -161,13 +182,18 @@ class TrackingExperiment:
         seq = ImageSequence(self.sequence_name)
         seq.load()
 
+        if self.sequence_results_name is not None:
+            seq_results = ImageSequenceResults(self.test_name,
+                                               seq_file = self.sequence_name,
+                                               results_file=self.sequence_results_name)
+
         optimizer_factory = OptimizerFactory()
         self.optimizer = optimizer_factory.getOptimizer(self.all_config)
 
         params = None
         seq.open()
         while seq.nextFrame():
-            (frame, gt_corners) = seq.getCurrentFrame()
+            frame, gt_corners, frame_name = seq.getCurrentFrame()
             if params is None:
                 template_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
                 ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
@@ -183,9 +209,16 @@ class TrackingExperiment:
             self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
 
             cv2.imshow('Video', frame)
-            if cv2.waitKey(20) & 0xFF == ord('q'):
-                break
+            # if cv2.waitKey(20) & 0xFF == ord('q'):
+            #     break
+            cv2.waitKey(20)
+
+            if self.sequence_results_name is not None:
+                seq_results.addFrame(frame=frame.copy(), name=frame_name, corners=estimated_corners.copy())
 
         seq.close()
         cv2.destroyAllWindows()
+
+        if self.sequence_results_name is not None:
+            seq_results.write()
 

@@ -7,8 +7,6 @@ import sys
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
-#from xml.etree.ElementTree import Element, SubElement
-
 from xml.dom import minidom
 
 class GroundTruthConstants:
