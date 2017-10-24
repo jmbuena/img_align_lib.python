@@ -64,7 +64,7 @@ class TrackingExperimentPlanar:
                 head, tail = os.path.splitext(self.sequence_name)
                 head, sequence_name = os.path.split(head)
 
-                self.sequence_results_name = os.path.join(self.results_dir, sequence_name + '.results.xml')
+                self.sequence_results_name = os.path.join(self.results_dir, self.test_name + '.results.xml')
 
                 algorithm_xml = xml_root.find('algorithm')
                 if algorithm_xml is not None:

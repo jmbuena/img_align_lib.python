@@ -25,7 +25,6 @@ class TrackingExperimentsSet:
 
     def add(self, track_exp):
         '''
-
         :param track_exp: TrackingExperiment
         '''
 
