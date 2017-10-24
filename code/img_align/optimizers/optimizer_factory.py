@@ -60,6 +60,9 @@ class OptimizerFactory:
             if 'show_iter' in config:
                 optimizer_params['show_iter'] = config['show_iter']
 
+            if 'profiling' in config:
+                optimizer_params['profiling'] = config['profiling']
+
             return OptimizerGaussNewton(cost_function, **optimizer_params)
 
         return ValueError('optimizer_name value {} is not recognized'.format(optimizer_name))

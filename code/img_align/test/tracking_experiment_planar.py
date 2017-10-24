@@ -109,7 +109,7 @@ class TrackingExperimentPlanar:
                 elif param_type == 'float':
                     config_params[param_name] = float(param_value)
                 elif param_type == 'bool':
-                    config_params[param_name] = (param_value == 'True') or (param_value == '1')
+                    config_params[param_name] = (param_value.upper() == 'TRUE') or (param_value == '1')
                 elif param_type == 'num_list':
                     num_list = [float(x) for x in param_value.split()]
                     config_params[param_name] = np.array(num_list)
@@ -195,6 +195,7 @@ class TrackingExperimentPlanar:
         while seq.nextFrame():
             frame, gt_corners, frame_name = seq.getCurrentFrame()
             if params is None:
+                # Get the template from the first image using the ground truth parameters
                 template_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
                 ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
                 template_ctrl_coords = template_coords[ctrl_indices, :]
@@ -205,17 +206,22 @@ class TrackingExperimentPlanar:
 
             params = self.optimizer.solve(gray, params)
             estimated_corners, ctrl_lines = self.computeImageCoords(params)
-            self.showResults(frame, estimated_corners, ctrl_lines)
-            self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
 
             if self.show_results:
+                self.showResults(frame, estimated_corners, ctrl_lines)
+                self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
+
                 cv2.imshow('Video', frame)
                 # if cv2.waitKey(20) & 0xFF == ord('q'):
                 #     break
                 cv2.waitKey(20)
 
             if self.sequence_results_name is not None:
-                seq_results.addFrame(frame=frame.copy(), name=frame_name, corners=estimated_corners.copy())
+                seq_results.addFrame(frame=frame.copy(),
+                                     name=frame_name,
+                                     corners=estimated_corners.copy(),
+                                     profiling_info=self.optimizer.getProfilingInfo())
+
 
         seq.close()
         if self.show_results:

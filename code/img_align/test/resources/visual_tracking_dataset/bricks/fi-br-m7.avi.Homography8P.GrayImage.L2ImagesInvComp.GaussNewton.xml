@@ -47,7 +47,12 @@
           <type>bool</type>
           <value>False</value>
         </param>
-      </parameters>
+        <param>
+          <name>profiling</name>
+          <type>bool</type>
+          <value>True</value>
+        </param>
+     </parameters>
     </optimizer>
   </algorithm>
 </test>
