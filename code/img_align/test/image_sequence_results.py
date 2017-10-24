@@ -16,6 +16,13 @@ import cv2
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
+class Frame:
+
+    def __init__(self):
+        self.image = None # gray levels or RGB
+        self.name = None
+        self.corners = []
+        self.profiling = []
 
 class ImageSequenceResults:
 
@@ -23,10 +30,7 @@ class ImageSequenceResults:
         self.test_name = test_name
         self.seq_results_file = results_file
         self.seq_file = seq_file
-        self.frames = []
-        self.frame_names = []
-        self.frame_corners = []
-        self.frame_profiling = []
+        self.__frames = dict()
 
     def write(self):
         '''
@@ -40,35 +44,39 @@ class ImageSequenceResults:
             xml_sequence.text = self.seq_file
 #            xml_config = ET.SubElement(xml_root, 'config')
 
-            for i in range(len(self.frames)):
+            i = 0
+            for key, frame in self.__frames.iteritems():
                 xml_f = ET.SubElement(xml_root, 'frame')
                 xml_id = ET.SubElement(xml_f, 'id')
                 xml_id.text = str(i)
                 xml_seq_id = ET.SubElement(xml_f, 'sequence_id')
-                xml_seq_id.text = self.frame_names[i]
+                xml_seq_id.text = frame.name
 
-                xml_trial = ET.SubElement(xml_f, 'trial')
-                xml_trial_id = ET.SubElement(xml_trial, 'id')
-                xml_trial_id.text = str(1)
-                xml_trial_corners = ET.SubElement(xml_trial, 'corners')
-                corners = self.frame_corners[i]
-                corners_str = "".join([" {}".format(corners[y, x]) for y in range(corners.shape[0]) for x in range(corners.shape[1])])
-                xml_trial_corners.text = corners_str
+                for j in range(len(frame.corners)):
+                    xml_trial = ET.SubElement(xml_f, 'trial')
+                    xml_trial_id = ET.SubElement(xml_trial, 'id')
+                    xml_trial_id.text = str(j)
+                    xml_trial_corners = ET.SubElement(xml_trial, 'corners')
+                    corners = frame.corners[j]
+                    corners_str = "".join([" {}".format(corners[y, x]) for y in range(corners.shape[0]) for x in range(corners.shape[1])])
+                    xml_trial_corners.text = corners_str
 
-                # Profiling info
-                xml_trial_profiling = ET.SubElement(xml_trial, 'profiling')
-                profiling_info = self.frame_profiling[i]
-                xml_iter_costs = ET.SubElement(xml_trial_profiling, 'iter_costs')
-                iter_costs = profiling_info['iter_costs']
-                xml_iter_costs.text = "".join([" {}".format(iter_costs[j]) for j in range(len(iter_costs))])
+                    # Profiling info
+                    xml_trial_profiling = ET.SubElement(xml_trial, 'profiling')
+                    profiling_info = frame.profiling[j]
+                    xml_iter_costs = ET.SubElement(xml_trial_profiling, 'iter_costs')
+                    iter_costs = profiling_info['iter_costs']
+                    xml_iter_costs.text = "".join([" {}".format(iter_costs[k]) for k in range(len(iter_costs))])
 
-                xml_iter_time = ET.SubElement(xml_trial_profiling, 'iter_time')
-                iter_time = profiling_info['iter_time']
-                xml_iter_time.text = "".join([" {}".format(iter_time[j]) for j in range(len(iter_time))])
+                    xml_iter_time = ET.SubElement(xml_trial_profiling, 'iter_time')
+                    iter_time = profiling_info['iter_time']
+                    xml_iter_time.text = "".join([" {}".format(iter_time[k]) for k in range(len(iter_time))])
 
-                xml_iter_gradient_norm = ET.SubElement(xml_trial_profiling, 'iter_gradient_norm')
-                iter_gradient_norm = profiling_info['iter_gradient_norm']
-                xml_iter_gradient_norm.text = "".join([" {}".format(iter_gradient_norm[j]) for j in range(len(iter_gradient_norm))])
+                    xml_iter_gradient_norm = ET.SubElement(xml_trial_profiling, 'iter_gradient_norm')
+                    iter_gradient_norm = profiling_info['iter_gradient_norm']
+                    xml_iter_gradient_norm.text = "".join([" {}".format(iter_gradient_norm[k]) for k in range(len(iter_gradient_norm))])
+
+                i = i + 1
 
             # Create results_dir in depth
             path, file_name = os.path.split(self.seq_results_file)
@@ -94,11 +102,17 @@ class ImageSequenceResults:
         fid.write(xml_string_pretty)
         fid.close()
 
-    def addFrame(self, frame, name, corners, profiling_info):
+    def addFrameTrial(self, img, name, corners, profiling_info):
         '''
         '''
 
-        self.frames.append(frame)
-        self.frame_names.append(name)
-        self.frame_corners.append(corners)
-        self.frame_profiling.append(profiling_info)
+        frame = self.__frames.get(name)
+        if frame is None:
+            frame = Frame()
+            self.__frames[name] = frame
+
+        frame.image = img
+        frame.name = name
+        frame.corners.append(corners)
+        frame.profiling.append(profiling_info)
+

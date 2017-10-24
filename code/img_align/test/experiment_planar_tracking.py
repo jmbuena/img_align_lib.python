@@ -18,21 +18,23 @@ from img_align.optimizers import OptimizerFactory
 from img_align.test import ImageSequence
 from img_align.test import ImageSequenceResults
 
-class TrackingExperimentPlanar:
+class ExperimentPlanarTracking:
 
     def __init__(self, exp_file):
         self.exp_file = exp_file
-        self.motion_config = None
-        self.object_config = None
-        self.cost_config = None
-        self.optimizer_config = None
-        self.all_config = None
+        self.__motion_config = None
+        self.__object_config = None
+        self.__cost_config = None
+        self.__optimizer_config = None
+        self.__all_config = None
+        self.__show_results = False
+        self.__sequence_results_name = None
+        self.__optimizer = None
+
         self.sequence_name = None
-        self.sequence_results_name = None
-        self.optimizer = None
-        self.show_results = False
         self.test_name = None
         self.results_dir = None
+        self.seq_results = None
 
     def load(self):
         '''
@@ -53,38 +55,38 @@ class TrackingExperimentPlanar:
 
                 # Sequence name
                 if xml_root.find('sequence') is not None:
-                    self.sequence_name = xml_root.find('sequence').text
+                    self.__sequence_name = xml_root.find('sequence').text
 
                 # Execution params
                 if xml_root.find('execution_parameters') is not None:
                     self.results_dir = xml_root.find('execution_parameters').find('save_dir').text
                     show_results_str = xml_root.find('execution_parameters').find('show').text
-                    self.show_results = (show_results_str.upper() == "TRUE" or show_results_str == "1")
+                    self.__show_results = (show_results_str.upper() == "TRUE" or show_results_str == "1")
 
-                head, tail = os.path.splitext(self.sequence_name)
+                head, tail = os.path.splitext(self.__sequence_name)
                 head, sequence_name = os.path.split(head)
 
-                self.sequence_results_name = os.path.join(self.results_dir, self.test_name + '.results.xml')
+                self.__sequence_results_name = os.path.join(self.results_dir, self.test_name + '.results.xml')
 
                 algorithm_xml = xml_root.find('algorithm')
                 if algorithm_xml is not None:
 
                     # Motion Model configuration.
-                    self.motion_config = self.__parseXMLPart(algorithm_xml, 'motion_model')
+                    self.__motion_config = self.__parseXMLPart(algorithm_xml, 'motion_model')
 
                     # Object Model configuration.
-                    self.object_config = self.__parseXMLPart(algorithm_xml, 'object_model')
+                    self.__object_config = self.__parseXMLPart(algorithm_xml, 'object_model')
 
                     # Cost Function configuration.
-                    self.cost_config = self.__parseXMLPart(algorithm_xml, 'cost_function')
+                    self.__cost_config = self.__parseXMLPart(algorithm_xml, 'cost_function')
 
                     # Optimizer configuration.
-                    self.optimizer_config = self.__parseXMLPart(algorithm_xml, 'optimizer')
+                    self.__optimizer_config = self.__parseXMLPart(algorithm_xml, 'optimizer')
 
                     # Concat all the dictionaries in one
-                    self.all_config = dict(self.motion_config, **self.object_config)
-                    self.all_config.update(self.cost_config)
-                    self.all_config.update(self.optimizer_config)
+                    self.__all_config = dict(self.__motion_config, **self.__object_config)
+                    self.__all_config.update(self.__cost_config)
+                    self.__all_config.update(self.__optimizer_config)
 
             except IOError as e:
                 print e.strerror
@@ -117,9 +119,9 @@ class TrackingExperimentPlanar:
         return config_params
 
     def computeImageCoords(self, motion_params):
-        ref_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
-        ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
-        image_coords = self.optimizer.cost_function.motion_model.map(ref_coords, motion_params)
+        ref_coords = self.__optimizer.cost_function.object_model.getReferenceCoords()
+        ctrl_indices, ctrl_lines = self.__optimizer.cost_function.object_model.getCtrlPointsIndices()
+        image_coords = self.__optimizer.cost_function.motion_model.map(ref_coords, motion_params)
 
         # Make a dictionary for coordinates changes. The ref_coords are all over the template and ctrl points are only
         # 4 in the case of images object models. We like to change ctrl_lines indices to move only over the ctrl points
@@ -164,12 +166,15 @@ class TrackingExperimentPlanar:
                      color=line_color,
                      thickness=line_thickness)
 
+        font = cv2.FONT_HERSHEY_SIMPLEX
         for j in range(image_coords.shape[0]):
             cv2.circle(frame,
                        (int(image_coords[j, 0]), int(image_coords[j, 1])),
                        ctrl_point_radius,
                        ctrl_point_color,
                        -1)  # filled
+            cv2.putText(frame, str(j), (int(image_coords[j, 0]), int(image_coords[j, 1])),
+                        font, 1, (255, 255, 255), 2)
 
         return image_coords
 
@@ -179,16 +184,16 @@ class TrackingExperimentPlanar:
         loaded in the load method
         '''
 
-        seq = ImageSequence(self.sequence_name)
+        seq = ImageSequence(self.__sequence_name)
         seq.load()
 
-        if self.sequence_results_name is not None:
-            seq_results = ImageSequenceResults(self.test_name,
-                                               seq_file = self.sequence_name,
-                                               results_file=self.sequence_results_name)
+        if self.__sequence_results_name is not None:
+            self.seq_results = ImageSequenceResults(self.test_name,
+                                                    seq_file = self.__sequence_name,
+                                                    results_file=self.__sequence_results_name)
 
         optimizer_factory = OptimizerFactory()
-        self.optimizer = optimizer_factory.getOptimizer(self.all_config)
+        self.__optimizer = optimizer_factory.getOptimizer(self.__all_config)
 
         params = None
         seq.open()
@@ -196,18 +201,18 @@ class TrackingExperimentPlanar:
             frame, gt_corners, frame_name = seq.getCurrentFrame()
             if params is None:
                 # Get the template from the first image using the ground truth parameters
-                template_coords = self.optimizer.cost_function.object_model.getReferenceCoords()
-                ctrl_indices, ctrl_lines = self.optimizer.cost_function.object_model.getCtrlPointsIndices()
+                template_coords = self.__optimizer.cost_function.object_model.getReferenceCoords()
+                ctrl_indices, ctrl_lines = self.__optimizer.cost_function.object_model.getCtrlPointsIndices()
                 template_ctrl_coords = template_coords[ctrl_indices, :]
 
-                params = self.optimizer.cost_function.motion_model.computeParams(template_ctrl_coords, gt_corners)
+                params = self.__optimizer.cost_function.motion_model.computeParams(template_ctrl_coords, gt_corners)
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            params = self.optimizer.solve(gray, params)
+            params = self.__optimizer.solve(gray, params)
             estimated_corners, ctrl_lines = self.computeImageCoords(params)
 
-            if self.show_results:
+            if self.__show_results:
                 self.showResults(frame, estimated_corners, ctrl_lines)
                 self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
 
@@ -216,17 +221,17 @@ class TrackingExperimentPlanar:
                 #     break
                 cv2.waitKey(20)
 
-            if self.sequence_results_name is not None:
-                seq_results.addFrame(frame=frame.copy(),
-                                     name=frame_name,
-                                     corners=estimated_corners.copy(),
-                                     profiling_info=self.optimizer.getProfilingInfo())
+            if self.__sequence_results_name is not None:
+                self.seq_results.addFrameTrial(img=frame.copy(),
+                                               name=frame_name,
+                                               corners=estimated_corners.copy(),
+                                               profiling_info=self.__optimizer.getProfilingInfo())
 
 
         seq.close()
-        if self.show_results:
+        if self.__show_results:
             cv2.destroyAllWindows()
 
-        if self.sequence_results_name is not None:
-            seq_results.write()
+        if self.__sequence_results_name is not None:
+            self.seq_results.write()
 

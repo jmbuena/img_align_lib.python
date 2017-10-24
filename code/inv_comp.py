@@ -41,8 +41,8 @@ def on_mouse_event(event, x, y, flags, frame):
         font = cv2.FONT_HERSHEY_SIMPLEX
         copy_frame = np.copy(frame)
         for i in range(len(template_points)):
-            cv2.circle(copy_frame,template_points[i],5,(0,0,255),-1)
-            cv2.putText(copy_frame, str(i),template_points[i], font, 1, (255,255,255),2)
+            cv2.circle(copy_frame,template_points[i], 5, (0, 0, 255), -1)
+            cv2.putText(copy_frame, str(i), template_points[i], font, 1, (255, 255, 255), 2)
         cv2.imshow("image", copy_frame)
 
     # check to see if the left mouse button was released

@@ -13,10 +13,10 @@ import img_align.object_models
 import img_align.motion_models
 import img_align.cost_functions
 import img_align.optimizers
-from img_align.test import TrackingExperimentPlanar
+from img_align.test import ExperimentPlanarTracking
 
 
-class TrackingExperimentsSet:
+class ExperimentsSetPlanarTracking:
 
     def __init__(self):
 
@@ -38,11 +38,12 @@ class TrackingExperimentsSet:
         for exp in self.__tracking_experiments:
             exp.run()
 
-        return
-
-    def evaluateResults(self, gt_dir, results_dir, evaluation_dir):
+    def evaluateResults(self, exp_path):
         '''
-        Compare the results of different algorithms
+        Compare the results of different planar tracking algorithms
         '''
 
-        return
+        for exp in self.__tracking_experiments:
+            exp.run()
+
+
