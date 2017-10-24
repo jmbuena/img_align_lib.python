@@ -208,16 +208,18 @@ class TrackingExperimentPlanar:
             self.showResults(frame, estimated_corners, ctrl_lines)
             self.showResults(frame, gt_corners, ctrl_lines, ground_truth_display=True)
 
-            cv2.imshow('Video', frame)
-            # if cv2.waitKey(20) & 0xFF == ord('q'):
-            #     break
-            cv2.waitKey(20)
+            if self.show_results:
+                cv2.imshow('Video', frame)
+                # if cv2.waitKey(20) & 0xFF == ord('q'):
+                #     break
+                cv2.waitKey(20)
 
             if self.sequence_results_name is not None:
                 seq_results.addFrame(frame=frame.copy(), name=frame_name, corners=estimated_corners.copy())
 
         seq.close()
-        cv2.destroyAllWindows()
+        if self.show_results:
+            cv2.destroyAllWindows()
 
         if self.sequence_results_name is not None:
             seq_results.write()
