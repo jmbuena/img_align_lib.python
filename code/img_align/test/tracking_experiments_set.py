@@ -13,7 +13,7 @@ import img_align.object_models
 import img_align.motion_models
 import img_align.cost_functions
 import img_align.optimizers
-from img_align.test import TrackingExperiment
+from img_align.test import TrackingExperimentPlanar
 
 
 class TrackingExperimentsSet:

@@ -54,7 +54,7 @@ class ImageSequenceResults:
 
                 xml_trial_corners.text = corners_str
                 xml_trial_profiling = ET.SubElement(xml_trial, 'profiling')
-                xml_trial_profiling.text=''
+                xml_trial_profiling.text=' '
 
 
             # Create results_dir in depth
