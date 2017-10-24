@@ -27,7 +27,7 @@ class ImageSequence:
         self.current_frame_index = 0
         self.current_corners = None
 
-    def load(self):
+    def __load(self):
 
         '''
         :param exp_file: xml file with the sequence configuration
@@ -70,6 +70,9 @@ class ImageSequence:
         Open the video file it is the case. If we are dealing with an image sequence with image files on disk, this
         method does nothing.
         '''
+
+        self.__load()
+
         if self.is_video_file:
             self.video_capture = cv2.VideoCapture(self.video_file_path)
 

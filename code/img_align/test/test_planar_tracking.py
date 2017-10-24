@@ -33,8 +33,10 @@ class TestPlanarTracking(unittest.TestCase):
 
         bricks_path = os.path.join('resources', 'visual_tracking_dataset', 'bricks')
         exp_set = self.runOnBricksSubset(bricks_path)
-        exp_set.evaluateResults(bricks_path)
+        self.evaluateOnBricksSubset(bricks_path, exp_set)
 
+    def evaluateOnBricksSubset(self, exp_path, exp_set):
+        exp_set.evaluateResults(exp_path)
 
     def runOnBricksSubset(self, exp_path):
 
@@ -43,7 +45,7 @@ class TestPlanarTracking(unittest.TestCase):
         for exp_file in os.listdir(exp_path):
             if exp_file.endswith('.xml'):
                 e = ExperimentPlanarTracking(os.path.join(exp_path, exp_file))
-                e.load()
+                e.open()
                 exp_set.add(e)
 
         exp_set.run()

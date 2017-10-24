@@ -44,6 +44,20 @@ class ExperimentsSetPlanarTracking:
         '''
 
         for exp in self.__tracking_experiments:
-            exp.run()
+            exp.sequence.open()
+            exp.sequence_results.open()
+
+            while exp.sequence.nextFrame():
+                frame, gt_corners, frame_name = exp.sequence.getCurrentFrame()
+
+                # Get a FrameTrials object (name of image and results from different trials).
+                frame_trials = exp.sequence_results.getFrameTrials(frame_name)
+
+                # TODO: plot figures about results comparing with Ground truth values.
+                # That is comparing gt_corners with frame_trials.corners[i]
+
+
+
+
 
 

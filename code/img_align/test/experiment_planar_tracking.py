@@ -34,9 +34,10 @@ class ExperimentPlanarTracking:
         self.sequence_name = None
         self.test_name = None
         self.results_dir = None
-        self.seq_results = None
+        self.sequence_results = None
+        self.sequence = None
 
-    def load(self):
+    def open(self):
         '''
         :param exp_file: xml file with the experiment configuration
         '''
@@ -184,21 +185,25 @@ class ExperimentPlanarTracking:
         loaded in the load method
         '''
 
-        seq = ImageSequence(self.__sequence_name)
-        seq.load()
+        self.sequence = ImageSequence(self.__sequence_name)
+        self.sequence.open()
 
         if self.__sequence_results_name is not None:
-            self.seq_results = ImageSequenceResults(self.test_name,
-                                                    seq_file = self.__sequence_name,
-                                                    results_file=self.__sequence_results_name)
+            self.sequence_results = ImageSequenceResults(self.test_name,
+                                                         seq_file = self.__sequence_name,
+                                                         results_file=self.__sequence_results_name)
+
+        # if the sequence is already processed we do not run over it again.
+        if os.path.exists(self.__sequence_results_name):
+            self.sequence_results.open()
+            return
 
         optimizer_factory = OptimizerFactory()
         self.__optimizer = optimizer_factory.getOptimizer(self.__all_config)
 
         params = None
-        seq.open()
-        while seq.nextFrame():
-            frame, gt_corners, frame_name = seq.getCurrentFrame()
+        while self.sequence.nextFrame():
+            frame, gt_corners, frame_name = self.sequence.getCurrentFrame()
             if params is None:
                 # Get the template from the first image using the ground truth parameters
                 template_coords = self.__optimizer.cost_function.object_model.getReferenceCoords()
@@ -222,16 +227,15 @@ class ExperimentPlanarTracking:
                 cv2.waitKey(20)
 
             if self.__sequence_results_name is not None:
-                self.seq_results.addFrameTrial(img=frame.copy(),
+                self.sequence_results.addFrameTrial(img=frame.copy(),
                                                name=frame_name,
                                                corners=estimated_corners.copy(),
                                                profiling_info=self.__optimizer.getProfilingInfo())
 
-
-        seq.close()
+        self.sequence.close()
         if self.__show_results:
             cv2.destroyAllWindows()
 
         if self.__sequence_results_name is not None:
-            self.seq_results.write()
+            self.sequence_results.write()
 
