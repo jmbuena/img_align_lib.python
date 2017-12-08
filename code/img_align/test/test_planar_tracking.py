@@ -17,6 +17,7 @@ import img_align.object_models
 import img_align.cost_functions
 import img_align.optimizers
 
+
 class TestPlanarTracking(unittest.TestCase):
 
     def testVisualTrackingDataset(self):

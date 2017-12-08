@@ -16,6 +16,7 @@ import os
 
 from img_align.object_models import ModelImageGray
 
+
 class TestModelImageGray(unittest.TestCase):
 
     def setUp(self):

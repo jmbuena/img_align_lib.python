@@ -15,6 +15,7 @@ from math import *
 
 from img_align.motion_models import MotionHomography8P
 
+
 class TestMotionHomography8P(unittest.TestCase):
 
     def setUp(self):
