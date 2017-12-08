@@ -20,6 +20,7 @@ from img_align.object_models import ModelImageGray
 from img_align.cost_functions import CostFunL2ImagesInvComp
 from img_align.optimizers import OptimizerGaussNewton
 
+
 class TestMotionHomography8P(unittest.TestCase):
 
     def setUp(self):
