@@ -2,6 +2,7 @@
 # @brief Optimization problem interface for 'inverse compositional solutions'
 # @author Jose M. Buenaposada
 # @date 2016/11/12
+# @date 2017/08/16 (modified for new CostFunction class)
 #
 # Grupo de investigaci'on en Percepci'on Computacional y Rob'otica)
 # (Perception for Computers & Robots research Group)
@@ -42,10 +43,9 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         # NOTE: Here we do not initialize the constant matrices of the Inverse Compositional. They
         # will be only once when needed by calling self.__setupMatrices(). The matrices can not be
-        # initialized because Object Model some times are initialized in the first image of a sequence,
-        # and with them initialized (i.e. the image template is cropped from first image) we can initialize
-        # here the constant matrices.
-
+        # initialized because Object Models some times are initialized in the first image of a sequence,
+        # and with them initialized here we can initialize there (i.e. the image template is cropped from
+        # first image) the constant matrices.
 
     def computeJacobian(self, motion_params):
         """
@@ -79,14 +79,12 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         return self.__invJ
 
-
     def __setupMatrices(self):
-        self.__J = self.computeConstantJacobian()
-        self.__invJ = np.linalg.pinv(self.__J)
+        self.__J = self.__computeConstantJacobian()
+        self.__invJ = self.__computeConstantInverseJacobian()
 
         self.__initialized = True
         return
-
 
     def computeValue(self,
                      residual_vector,
@@ -104,13 +102,12 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         J = self.computeJacobian(motion_params)
 
-        # redidual_vector is Nx1 (number of pixels)
-        # J is Nx8 (number of pixels x number of motion params).
-        # delta_params is 8x1 (number of motion params x 1)
+        # residual_vector is Nx1 (number of pixels)
+        # J is Nxp (number of pixels x number of motion params).
+        # delta_params is px1 (number of motion params x 1)
         cost = math.sqrt(np.linalg.norm(residual_vector + np.dot(J, delta_params)))
 
         return cost
-
 
     def computeResiduals(self, image, motion_params):
         """
@@ -126,11 +123,12 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         template_coords = self.object_model.getReferenceCoords()
         image_coords = self.motion_model.map(template_coords, motion_params)
         features_img = self.object_model.computeImageFeatures(image, image_coords)
-        features_template = self.object_model.computeTemplateFeatures(motion_params)
+        # features_template = self.object_model.computeReferenceFeatures(motion_params)
+        features_template = self.object_model.computeReferenceFeatures()
 
         if self.show_debug_info:
-            I_warped = self.object_model.convertFeaturesToImage(features_img)
-            I_template = self.object_model.convertFeaturesToImage(features_template)
+            I_warped = self.object_model.convertReferenceFeaturesToImage(features_img)
+            I_template = self.object_model.convertReferenceFeaturesToImage(features_template)
             cv2.imshow('features_vector reshaped', I_warped)
             cv2.imshow('template_features_vector reshaped', I_template)
 
@@ -144,7 +142,6 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         residuals = np.float64(features_img) - np.float64(features_template)
 
         return residuals
-
 
     def updateMotionParams(self, motion_params, inc_params):
         """
@@ -166,19 +163,25 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         identity_params = self.motion_model.getIdentityParams()
         return self.motion_model.getCompositionWithInverseParams(motion_params, inc_params + identity_params)
 
-    def computeConstantJacobian(self):
+    def __computeConstantInverseJacobian(self):
+        if self.__J is None:
+            self.__J = self.__computeConstantJacobian()
+
+        return np.linalg.pinv(self.__J)
+
+    def __computeConstantJacobian(self):
 
         template_coords = self.object_model.getReferenceCoords()
         J = np.zeros((template_coords.shape[0], self.motion_model.getNumParams()), dtype=np.float64)
-        gradients = self.object_model.computeFeaturesGradient()
+        gradients = self.object_model.computeReferenceFeaturesGradient()
 
         if self.show_debug_info_jacobians:
             max_ = np.max(gradients[:, 0])
             min_ = np.min(gradients[:, 0])
-            g_x = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:, 0]) - min_)/(max_- min_))
+            g_x = self.object_model.convertReferenceFeaturesToImage(255*(np.float32(gradients[:, 0]) - min_)/(max_- min_))
             max_ = np.max(gradients[:, 1])
             min_ = np.min(gradients[:, 1])
-            g_y = self.object_model.convertFeaturesToImage(255*(np.float32(gradients[:, 1]) - min_) / (max_ - min_))
+            g_y = self.object_model.convertReferenceFeaturesToImage(255*(np.float32(gradients[:, 1]) - min_) / (max_ - min_))
             cv2.imshow('g_x', np.uint8(g_x))
             cv2.imshow('g_y', np.uint8(g_y))
 
@@ -194,7 +197,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
             for j in range(J.shape[1]):
                 max_ = np.max(J[:, j])
                 min_ = np.min(J[:, j])
-                J_img = self.object_model.convertFeaturesToImage(255*(J[:, j]-min_)/(max_-min_))
+                J_img = self.object_model.convertReferenceFeaturesToImage(255*(J[:, j]-min_)/(max_-min_))
                 cv2.imshow('J{}'.format(j), np.uint8(J_img))
 
         return J

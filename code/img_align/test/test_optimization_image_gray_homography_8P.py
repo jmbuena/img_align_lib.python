@@ -13,31 +13,19 @@ import unittest
 import numpy as np
 import cv2
 import os
-
-
 from img_align.motion_models import MotionHomography8P
 from img_align.object_models import ModelImageGray
 from img_align.cost_functions import CostFunL2ImagesInvComp
+from img_align.cost_functions import CostFunL2ImagesInvCompRegressor
 from img_align.optimizers import OptimizerGaussNewton
 
 
-class TestMotionHomography8P(unittest.TestCase):
-
-    def setUp(self):
-
-    #    self.template = cv2.imread(os.path.join('resources', 'book_lowres.jpg'))
-        self.template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
-        self.initial_params = self.getInitialParams(self.template)
-        assert(self.template is not None)
-        self.object_model = ModelImageGray(self.template, equalize=True)
-        self.motion_model = MotionHomography8P()
-        self.cost_function = CostFunL2ImagesInvComp(self.object_model, self.motion_model, show_debug_info=True)
-        self.optimizer = OptimizerGaussNewton(self.cost_function, max_iter=100, show_iter=False)
+class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
 
     def getInitialParams(self, template):
 
         # The template center point should be the (0,0). Therefore we need to
-        # correct start the homograthe homography H in order to be the right one.
+        # correct start the homography H in order to be the right one.
         heightDiv2 = round(template.shape[0]/2.0)
         widthDiv2 = round(template.shape[1]/2.0)
         pts1 = np.array([[-widthDiv2, -heightDiv2],
@@ -50,24 +38,24 @@ class TestMotionHomography8P(unittest.TestCase):
                          [106, 166]], dtype=np.float32)
 
         H = cv2.getPerspectiveTransform(pts1, pts2)
-        H = H / H[2,2]
+        H = H / H[2, 2]
 
         initial_params = np.copy(np.reshape(H, (9, 1)))
-        initial_params = initial_params[0:8,:]
+        initial_params = initial_params[0:8, :]
 
         return initial_params
 
-    def showResults(self, frame, motion_params):
+    def showResults(self, frame, motion_params, object_model, motion_model):
         """
-        Show the tracking results over the given frame
+        Show the tracking results over the given frame (but not calls to cv2.waitKey())
 
         :param frame: plot results over this frame
         :return: The results plotted over the input frame with OpenCV commands.
         """
 
-        ref_coords = self.object_model.getReferenceCoords()
-        ctrl_indices, ctrl_lines = self.object_model.getCtrlPointsIndices()
-        image_coords = np.int32(self.motion_model.map(ref_coords, motion_params))
+        ref_coords = object_model.getReferenceCoords()
+        ctrl_indices, ctrl_lines = object_model.getCtrlPointsIndices()
+        image_coords = np.int32(motion_model.map(ref_coords, motion_params))
 
         H = np.reshape(np.append(motion_params, 1.0), (3,3))
 
@@ -90,32 +78,69 @@ class TestMotionHomography8P(unittest.TestCase):
                        (0, 0., 255.),  # red color
                        -1)  # filled
 
-    def test_inv_comp(self):
+    # def test_inv_comp(self):
+    #
+    #     # template = cv2.imread(os.path.join('resources', 'book_lowres.jpg'))
+    #     template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
+    #     initial_params = self.getInitialParams(template)
+    #     self.assertTrue(template is not None)
+    #     object_model = ModelImageGray(template, equalize=True)
+    #     motion_model = MotionHomography8P()
+    #
+    #     cost_function = CostFunL2ImagesInvComp(object_model, motion_model, show_debug_info=True)
+    #     optimizer = OptimizerGaussNewton(cost_function, max_iter=20, show_iter=False)
+    #
+    #     self.tracking(initial_params, object_model, motion_model, optimizer)
+
+    def test_inv_comp_regressor(self):
+
+        # For generating different examples, the template should be a full image with the template
+        # (i.e. book cover) embedded
+        template = cv2.imread(os.path.join('resources', 'book_mp4_first_image.jpg'))
+        # The rectified template (fronto-parallel image of the book).
+        rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
+        if len(rectified_template.shape) == 3:
+            rectified_template = cv2.cvtColor(rectified_template, cv2.COLOR_RGB2GRAY)
+
+        initial_params = self.getInitialParams(rectified_template)
+
+        self.assertTrue(template is not None)
+
+        object_model = ModelImageGray(template_image_shape=rectified_template.shape)
+        motion_model = MotionHomography8P()
+
+        reference_coords = object_model.getReferenceCoords()
+        template_coords = motion_model.map(reference_coords, initial_params)
+
+        object_model.setTemplateImage(template, template_coords)
+
+        cost_function = CostFunL2ImagesInvCompRegressor(object_model, motion_model, show_debug_info=True)
+        optimizer = OptimizerGaussNewton(cost_function, max_iter=20, show_iter=False)
+
+        self.tracking(initial_params, object_model, motion_model, optimizer)
+
+    def tracking(self, initial_params, object_model, motion_model, optimizer):
 
         video_source = os.path.join('resources', 'book1.mp4')
 
         cv2.namedWindow('Video')
         video_capture = cv2.VideoCapture(video_source)
-        params = self.initial_params
-        #i = 1
-        while False:
+        params = initial_params
+        #while True:
+        for i in range(100):
             # Capture frame-by-frame
             ret, frame = video_capture.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            #tracker.processFrame(gray)
-            params = self.optimizer.solve(frame, params)
-            self.showResults(frame, params)
+            params = optimizer.solve(gray, params)
 
             # Display the resulting frame
-            #tracker.showResults(frame)
+            self.showResults(frame, params, object_model, motion_model)
             cv2.imshow('Video', frame)
             #cv2.imwrite(os.path.join('resources', 'book_kk_{}.jpg'.format(i)), frame)
 
             if cv2.waitKey(20) & 0xFF == ord('q'):
-                 break
-
-            #i = i + 1
+                break
 
         # When everything is done, release the capture
         video_capture.release()

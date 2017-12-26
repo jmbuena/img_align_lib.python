@@ -94,4 +94,4 @@ class TestMotionHomography8P(unittest.TestCase):
         self.assertTrue(self.motion.getNumParams() == 8)
 
     def test_validParams(self):
-        return
+        self.assertTrue(True)

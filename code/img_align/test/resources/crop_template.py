@@ -17,7 +17,7 @@ def main():
                      [0, 74]], dtype=np.float32)
     H12 = cv2.getPerspectiveTransform(pts1, pts2) 
     H13 = cv2.getPerspectiveTransform(pts1, pts3) 
-    im = cv2.imread('book_kk_1.jpg')
+    im = cv2.imread('book1_mp4_first_image.jpg')
     assert(im is not None)
     rect12 = cv2.warpPerspective(im, H12, (640, 480))
     rect13 = cv2.warpPerspective(im, H13, (100, 75))

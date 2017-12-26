@@ -24,7 +24,7 @@ class ObjectModel:
         return
 
     @abc.abstractmethod
-    def computeFeaturesGradient(self):
+    def computeReferenceFeaturesGradient(self):
         """
         Computes the grey levels gradient of a template image or any other feature
         in the template model.
@@ -74,7 +74,7 @@ class ObjectModel:
 
 
     @abc.abstractmethod
-    def computeTemplateFeatures(self, object_params=None):
+    def computeReferenceFeatures(self, object_params=None):
         """
         Computes the features vector from the template (the target object to be tracked)
 
@@ -139,7 +139,7 @@ class ObjectModel:
         return
 
     @abc.abstractmethod
-    def convertFeaturesToImage(self, features):
+    def convertReferenceFeaturesToImage(self, features):
         """
         Converts the features (of the size of template points) to an image in order to visualize it.
         """

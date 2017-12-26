@@ -11,7 +11,6 @@
 
 import cv2
 import numpy as np
-import math
 from img_align.object_models import ObjectModel
 from img_align.utils import computeGrayImageGradients
 
@@ -23,30 +22,57 @@ class ModelImageGray(ObjectModel):
     a Gaussian kernel.
     """
 
-    def __init__(self, template_image=None, equalize=False, template_image_shape=None):
+    def __init__(self,
+                 template_image=None, template_image_coords=None,
+                 template_image_shape=None, equalize=False):
         """
-        :param template_image:
-        :param equalize:
+        This constructor can take a template_image that can be in the form of:
+            1) A rectified image. For example, the cover of a book warped
+               to have the sides parallel to the image axes and extended to
+               the image boundaries.
+
+            2) A whole image where the template is embedded. For example,
+               a book cover captured without any restrictions.
+
+        In any of the cases, the template_image param is the image itself. If the
+        template_image is None in the constructor then the template image is
+        set to the gray levels of the image and coordinates of the first call to
+        computeImageFeatures.
+
+        The template_image_coords are the coordinates of the template
+        pixels in the template_image. If template_image_coords is None, then the
+        constructor assumes that the template_image is a rectified one and the
+        template_image_coords are the same as the rectified image ones.
+
+        The template_image_shape defines the size of the rectified template image
+        to use in tracking. I will be extracted from the template_image whether is
+        or is not a rectified image.
+
+        :param template_image: The template image itself
+        :param template_image_coords: Nx2 numpy array with 2D coords of the pixels in the template image
+        :param template_image_shape: (height, width) tuple with the image dimensions in pixels
+        :param equalize: Bool value for equalize or not the template image.
         """
         super(ModelImageGray, self).__init__()
         self.__image = None
+        self.__image_rectified = None
         self.__template_image_shape = None
         self.__equalize = equalize
         self.__gradients = None
         self.__gray_levels = None
-        self.__coordinates = None
-        self.__min_coords = None
-        self.__max_coords = None
+        self.__coordinates_original = None
+        self.__coordinates_rectified = None
 
         self.__control_points_indices = []
         self.__control_points_lines = []
 
-        if template_image is not None:
-            self.setTemplateImage(template_image)
-        elif template_image_shape is not None:
-            self.setTemplateCoords(template_image_shape)
+        if template_image_shape is not None:
+            self.__changeRectifiedTemplateSize(template_image_shape)
 
-    def setTemplateCoords(self, template_image_shape):
+        if template_image is not None:
+            self.setTemplateImage(template_image, template_image_coords)
+
+    def __changeRectifiedTemplateSize(self, template_image_shape):
 
         rows = template_image_shape[0]
         cols = template_image_shape[1]
@@ -54,9 +80,9 @@ class ModelImageGray(ObjectModel):
         assert (cols != 0)
         self.__template_image_shape = template_image_shape
 
-        self.__coordinates = self.__computeTemplateCoordinates(template_image_shape)
-        self.__min_coords = np.amin(self.__coordinates, axis=0)
-        self.__max_coords = np.amax(self.__coordinates, axis=0)
+        self.__coordinates_rectified = self.__computeRectifiedTemplateCoordinates(template_image_shape)
+        if self.__coordinates_original is None:
+            self.__coordinates_original = np.copy(self.__coordinates_rectified)
 
         self.__control_points_indices = []
         self.__control_points_indices.append(0)
@@ -70,52 +96,47 @@ class ModelImageGray(ObjectModel):
             p2 = self.__control_points_indices[(i + 1) % 4]
             self.__control_points_lines.append([p1, p2])
 
-    def setTemplateImage(self, template_image):
+    def setTemplateImage(self, template_image, template_image_coords):
 
         if template_image is None:
             return
 
-        rows = template_image.shape[0]
-        cols = template_image.shape[1]
+        self.__image = template_image
+
+        template_image_rectified = template_image
+        if template_image_coords is not None:
+            # The template_image is not rectified image
+            # We use the template_image_coords to re-sample the image where the template is embedded
+            template_image_rectified = self.__resampleImage(template_image,
+                                                            template_image_coords,
+                                                            self.__template_image_shape)
+        self.__coordinates_original = template_image_coords
+
+        rows = template_image_rectified.shape[0]
+        cols = template_image_rectified.shape[1]
         assert (rows != 0)
         assert (cols != 0)
         num_pixels = rows * cols
 
-        if len(template_image.shape) == 3:
-            im_gray = cv2.cvtColor(template_image, cv2.COLOR_RGB2GRAY)
-            self.__image = im_gray
+        if len(template_image_rectified.shape) == 3:
+            im_gray = cv2.cvtColor(template_image_rectified, cv2.COLOR_RGB2GRAY)
+            self.__image_rectified = im_gray
         else:
-            self.__image = np.copy(template_image)
+            self.__image_rectified = np.copy(template_image_rectified)
 
-        self.__image = cv2.GaussianBlur(self.__image, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
+        self.__image_rectified = cv2.GaussianBlur(self.__image_rectified, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
 
         if self.__equalize:
-            self.__image = cv2.equalizeHist(self.__image)
+            self.__image_rectified = cv2.equalizeHist(self.__image_rectified)
 
-        self.__gradients = np.float64(computeGrayImageGradients(self.__image))
-        self.__gray_levels = np.float64(self.__image.reshape(num_pixels, 1))
+        self.__gradients = np.float64(computeGrayImageGradients(self.__image_rectified))
+        self.__gray_levels = np.float64(self.__image_rectified.reshape(num_pixels, 1))
 
-        self.setTemplateCoords(self.__image.shape)
+        self.__changeRectifiedTemplateSize(self.__image_rectified.shape)
 
-        # self.__coordinates = self.__computeTemplateCoordinates(self.__image.shape)
-        # self.__min_coords = np.amin(self.__coordinates, axis=0)
-        # self.__max_coords = np.amax(self.__coordinates, axis=0)
-        #
-        # self.__control_points_indices = []
-        # self.__control_points_indices.append(0)
-        # self.__control_points_indices.append(cols - 1)
-        # self.__control_points_indices.append(cols * rows - 1)
-        # self.__control_points_indices.append(cols * (rows - 1))
-        #
-        # self.__control_points_lines = []
-        # for i in range(4):
-        #     p1 = self.__control_points_indices[i]
-        #     p2 = self.__control_points_indices[(i + 1) % 4]
-        #     self.__control_points_lines.append([p1, p2])
-
-    def computeFeaturesGradient(self):
+    def computeReferenceFeaturesGradient(self):
         """
-        Computes the grey levels gradient of a template image or any other feature
+        Computes the grey levels gradient of the rectified template image or any other feature
         in the template model.
 
         It computes the  \frac{\partial I(\vx)}{\partial \vx} (the gradient).
@@ -126,7 +147,7 @@ class ModelImageGray(ObjectModel):
         """
         return self.__gradients
 
-    def computeImageFeatures(self, image, coords):
+    def __resampleImage(self, image, coords, template_image_shape):
         """
         Computes the features vector from the images in the given coords.
         Converts the input image to gray levels and then performs bilinear
@@ -139,7 +160,7 @@ class ModelImageGray(ObjectModel):
         """
         assert(coords.shape[1] == 2)
 
-        # We don't do anything special with the warped image (nor DCT, nor Borders, etc).
+        # We don't do anything special with the warped image (nor DCT, nor extracting borders, etc).
         if len(image.shape) == 3:
             im_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
@@ -147,7 +168,7 @@ class ModelImageGray(ObjectModel):
 
         im_cols = im_gray.shape[1]
         im_rows = im_gray.shape[0]
-        num_pixels_img = im_cols*im_rows
+        #num_pixels_img = im_cols*im_rows
 
         # As coords, in the worst case, it will be between 4 integer coordinates on
         # image. We have to find its gray level using the gray levels of the 4 sorrounding pixels =>
@@ -162,10 +183,9 @@ class ModelImageGray(ObjectModel):
         #               x
         #
 
-        # As template top left corner coords are are (-width/2, -height/2) then, inorder
+        # As template top left corner coords are are (-width/2, -height/2) then, in order
         # to get (0,0) in that corner, we have to add (width/2, height/2) to all coordinates
-        # that are going to sample from an image. self.__min_coords are the coordinates of top
-        # left corner of the template.
+        # that are going to sample from an image.
         floor_x = np.floor(coords[:, 0])
         ceil_x = np.ceil(coords[:, 0])
         floor_y = np.floor(coords[:, 1])
@@ -176,7 +196,7 @@ class ModelImageGray(ObjectModel):
         g2 = np.zeros((coords.shape[0], 1))
         g3 = np.zeros((coords.shape[0], 1))
 
-        l  = (floor_y >= 0) & (ceil_y < im_rows) & (floor_x >= 0) & (ceil_x < im_cols)
+        l = (floor_y >= 0) & (ceil_y < im_rows) & (floor_x >= 0) & (ceil_x < im_cols)
         im_gray_flatten = im_gray.flatten()[:, np.newaxis]
         g0[l, :] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*floor_y[l])])
         g1[l, :] = np.float32(im_gray_flatten[np.int32(floor_x[l] + im_cols*ceil_y[l])])
@@ -193,8 +213,25 @@ class ModelImageGray(ObjectModel):
 
         features = g01 + (g23 - g01)*y_delta
 
-#        warped_img = np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
-        warped_img = np.uint8(np.reshape(features, (self.__template_image_shape[0], self.__template_image_shape[1])))
+        warped_img = np.uint8(np.reshape(features, (template_image_shape[0], template_image_shape[1])))
+
+        return warped_img
+
+    def computeImageFeatures(self, image, coords):
+        """
+        Computes the features vector from the images in the given coords.
+        Converts the input image to gray levels and then performs bilinear
+        interpolation in the position of the coords on the image. (Nx1 with N the
+        number of pixels).
+
+        :param image: A np array with the image.
+        :param coords: np array of Nx2, N points being 2-dimensional.
+        :return: A np array being Nx1 (number of template pixels x 1 )
+        """
+
+        assert(self.__template_image_shape is not None)
+
+        warped_img = self.__resampleImage(image, coords, self.__template_image_shape)
 
         # If the template image is not set in the constructor then the template image is
         # set to the gray levels of the image and coordinates of the first call to
@@ -206,16 +243,27 @@ class ModelImageGray(ObjectModel):
         if self.__equalize:
             warped_img = np.float64(cv2.equalizeHist(warped_img))
 
-        num_template_pixels = self.__image.shape[0] * self.__image.shape[1]
+        num_template_pixels = self.__image_rectified.shape[0] * self.__image_rectified.shape[1]
         features = np.reshape(warped_img, (num_template_pixels, 1))
 
         return features
 
-    def computeTemplateFeatures(self, object_params=None):
+    def getTemplateImageAndCoords(self):
         """
-        Returns the template gray levels as a vector.
+        Returns the image where the template is embedded. Also get the coordinates (as a numpy array (Nx2, x-y))
+        where the template is in the returned image.
 
-        :param object_params: A np array with the motion params
+        :return: A tuple (image, coordinates)
+        """
+        return self.__image, self.__coordinates_original
+
+
+    def computeReferenceFeatures(self, object_params=None):
+        """
+        Returns the rectified template image gray levels as a vector. Do not accept any object params in the
+        case of gray images.
+
+        :param object_params: A np array with the object params (in this case is always None).
         :return: A vector that is Nx1 (number of template pixels x 1 ).
         """
 
@@ -223,10 +271,9 @@ class ModelImageGray(ObjectModel):
 
         return gray_levels
 
-
     def getReferenceCoords(self):
         """
-        Returns the coordinates of template points (the reference coordinates).
+        Returns the coordinates of the rectified image template points (the reference coordinates).
 
         Returns the coordinates of each pixel from left to right and top to
         bottom (by rows). The coordinates of the top left corner are (-width/2,-height/2),
@@ -236,8 +283,7 @@ class ModelImageGray(ObjectModel):
         :return  A np array that is Nx2 (number of template pixels/features x 2)
         """
 
-        return np.copy(self.__coordinates)
-
+        return np.copy(self.__coordinates_rectified)
 
     def getCtrlPointsIndices(self):
         """
@@ -260,17 +306,13 @@ class ModelImageGray(ObjectModel):
         """
         return self.__control_points_indices, self.__control_points_lines
 
-
     def getNumOfReferenceCoords(self):
+        return self.self.__template_image_shape[0] * self.__template_image_shape[1]
 
-        return self.__image.shape[0] * self.__image.shape[1]
+    def convertReferenceFeaturesToImage(self, features):
+        return np.uint8(np.reshape(features, (self.__template_image_shape[0], self.__template_image_shape[1])))
 
-
-    def convertFeaturesToImage(self, features):
-
-        return np.uint8(np.reshape(features, (self.__image.shape[0], self.__image.shape[1])))
-
-    def __computeTemplateCoordinates(self, gray_image_shape):
+    def __computeRectifiedTemplateCoordinates(self, gray_image_shape):
 
         assert (len(gray_image_shape) < 3)
 
