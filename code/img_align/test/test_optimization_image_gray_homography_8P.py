@@ -106,7 +106,7 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
 
         self.assertTrue(template is not None)
 
-        object_model = ModelImageGray(template_image_shape=rectified_template.shape)
+        object_model = ModelImageGray(template_image_shape=rectified_template.shape)  #, equalize=False)
         motion_model = MotionHomography8P()
 
         reference_coords = object_model.getReferenceCoords()
@@ -127,7 +127,7 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
         video_capture = cv2.VideoCapture(video_source)
         params = initial_params
         #while True:
-        for i in range(100):
+        for i in range(300):
             # Capture frame-by-frame
             ret, frame = video_capture.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
