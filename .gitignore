@@ -1,0 +1,10 @@
+
+\.idea/
+
+code/build/
+
+code/dist/
+
+code/img_align_lib\.egg-info/
+
+*.pyc
