@@ -72,8 +72,8 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         if self.show_debug_info_inv_jacobians:
             for i in range(self.__invJ.shape[0]):
-                max_ = np.max(self.__invJ[i,:])
-                min_ = np.min(self.__invJ[i,:])
+                max_ = np.max(self.__invJ[i, :])
+                min_ = np.min(self.__invJ[i, :])
                 J_img = self.object_model.convertFeaturesToImage(255*(self.__invJ[i,:]-min_)/(max_-min_))
                 cv2.imshow('invJ{}'.format(i), np.uint8(J_img))
 
@@ -123,7 +123,6 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         template_coords = self.object_model.getReferenceCoords()
         image_coords = self.motion_model.map(template_coords, motion_params)
         features_img = self.object_model.computeImageFeatures(image, image_coords)
-        # features_template = self.object_model.computeReferenceFeatures(motion_params)
         features_template = self.object_model.computeReferenceFeatures()
 
         if self.show_debug_info:

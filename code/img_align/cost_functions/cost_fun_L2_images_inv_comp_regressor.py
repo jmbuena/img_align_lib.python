@@ -13,6 +13,7 @@ import abc
 import numpy as np
 import math
 import cv2
+import matplotlib.pyplot as plt
 from img_align.cost_functions import CostFunL2ImagesInvComp
 
 
@@ -39,7 +40,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, object_model, motion_model, num_samples=1000, show_debug_info=False):
+    def __init__(self, object_model, motion_model, num_samples=10000, show_debug_info=False):
         #low = None, high = None,
         """
         :param object_model: Object model to use in tracking
@@ -71,12 +72,12 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         if not self.__initialized:
             self.__setupMatrices()
 
-        # if self.show_debug_info_jacobians:
-        #     for j in range(self.__J.shape[1]):
-        #         max_ = np.max(self.__J[:, j])
-        #         min_ = np.min(self.__J[:, j])
-        #         J_img = self.object_model.convertReferenceFeaturesToImage(255*(self.__J[:, j]-min_)/(max_-min_))
-        #         cv2.imshow('J{}'.format(j), np.uint8(J_img))
+        if self.show_debug_info_jacobians:
+            for j in range(self.__J.shape[1]):
+                max_ = np.max(self.__J[:, j])
+                min_ = np.min(self.__J[:, j])
+                J_img = self.object_model.convertReferenceFeaturesToImage(255*(self.__J[:, j]-min_)/(max_-min_))
+                cv2.imshow('J{}'.format(j), np.uint8(J_img))
 
         return self.__J
 
@@ -114,7 +115,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         invJ = np.zeros((self.motion_model.getNumParams(), template_coords.shape[0]), dtype=np.float64)
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        delta_motion_params = np.random.uniform(low=-0.0000001, high=0.0000001,
+        delta_motion_params = np.random.uniform(low=-0.0001, high=0.0001,
                                                 size=(self.motion_model.getNumParams(), self.num_samples))
 
         # delta_gray is N x num_samples (number of pixels x number of samples generated)
@@ -126,36 +127,68 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         identity_params = self.motion_model.getIdentityParams()
         for i in range(self.num_samples):
             # we are going to use a uniform sampling scheme for the motion parameters.
-            #motion_params = delta_motion_params[:, i]
             delta_params = np.reshape(delta_motion_params[:, i], (self.motion_model.getNumParams(), 1))
-            motion_params = delta_params
-            coords = self.motion_model.map(template_coords, motion_params)
+            coords = self.motion_model.map(template_coords, identity_params + delta_params)
             features_img = self.object_model.computeImageFeatures(template_image, coords)
-            delta_gray_i = np.float64(features_img - features_template)
-            delta_gray[:, i] = delta_gray_i.T
-            delta_motion_params[:, i] = np.reshape(identity_params, (self.motion_model.getNumParams(), 1)) + delta_params
+            delta_gray_i = np.float64(features_img) - np.float64(features_template)
+            delta_gray[:, :i] = delta_gray_i
+            #delta_motion_params[:, :i] = identity_params + delta_params
+            delta_motion_params[:, :i] = delta_params
 
-            if self.show_debug_info_jacobians:
+            if i % 100 == 0:
+                print '{} \n'.format(i)
+
+            if self.show_debug_info_inv_jacobians:
                 # max_ = np.max(features_img)
                 # min_ = np.min(features_img)
-                #features_img_show = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(features_img)-min_)/(max_-min_))
                 features_img_show = self.object_model.convertReferenceFeaturesToImage(features_img)
                 warped_image_show = self.object_model.convertReferenceFeaturesToImage(features_img_show)
                 cv2.imshow("Warped Image", warped_image_show)
 
-                #max_ = np.max(features_template)
-                #min_ = np.min(features_template)
-                #features_template_show = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(features_template)-min_)/(max_-min_))
                 features_template_show = self.object_model.convertReferenceFeaturesToImage(features_template)
                 template_image_show = self.object_model.convertReferenceFeaturesToImage(np.uint8(features_template_show))
-                cv2.imshow("Template Image", warped_image_show)
+                cv2.imshow("Template Image", template_image_show)
 
                 max_ = np.max(delta_gray_i)
                 min_ = np.min(delta_gray_i)
                 diff_image_show = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(delta_gray_i)-min_)/(max_-min_))
                 cv2.imshow("Diff Image", diff_image_show)
 
-        return np.dot(delta_motion_params, np.linalg.pinv(delta_gray))
+                diff_image_2 = np.float64(warped_image_show) - np.float64(template_image_show)
+                max_ = np.max(diff_image_2)
+                min_ = np.min(diff_image_2)
+                diff_image_2 = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(diff_image_2)-min_)/(max_-min_))
+                cv2.imshow("Diff2 Image", diff_image_2)
+
+                cv2.waitKey()
+
+        # -----------------------------------------------------------------------
+        # Direct application of Jurie-Dhome approach: very slow training.
+        # -----------------------------------------------------------------------
+        # Note: H2 can be rank deficient as it is num_pixels x num_pixels matrix and we are using self.num_samples
+        #       columns in delta_gray (delta_gray is num_pixels x self..num_samples).
+        #H2 = np.dot(delta_gray, delta_gray.T) + np.random.uniform(low=0.0, high=0.00001,
+        #                                        size=(template_coords.shape[0], template_coords.shape[0]))
+        #H2 = np.dot(delta_gray, delta_gray.T)
+        #invH2 = np.linalg.pinv(H2)
+        #pinvH = np.dot(delta_gray.T, invH2)
+        #A = np.dot(delta_motion_params, pinvH)
+        #return A
+
+        # -----------------------------------------------------------------------
+        # Application of Holzer et al. method which results in faster training:
+        #   "Online Learning of Linear Predictors for Real-Time Tracking"
+        #  S. Holzer, M. Pollefeys, S. Illic, D. Tan, N. Navab
+        #  ECCV 2012.
+        # -----------------------------------------------------------------------
+        pinvY = np.dot(delta_motion_params.T, np.linalg.inv(np.dot(delta_motion_params, delta_motion_params.T)))
+        B = np.dot(delta_gray, pinvY)
+        A = np.linalg.pinv(B)
+        return A
+
+        # -----------------------------------------------------------------
+
+        #return np.dot(delta_motion_params, np.linalg.pinv(delta_gray))
 
     def __computeConstantJacobian(self):
 
