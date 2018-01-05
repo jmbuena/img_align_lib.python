@@ -115,7 +115,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         invJ = np.zeros((self.motion_model.getNumParams(), template_coords.shape[0]), dtype=np.float64)
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        delta_motion_params = np.random.uniform(low=-0.0001, high=0.0001,
+        delta_motion_params = np.random.uniform(low=-0.001, high=0.001,
                                                 size=(self.motion_model.getNumParams(), self.num_samples))
 
         # delta_gray is N x num_samples (number of pixels x number of samples generated)
@@ -133,11 +133,11 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
             delta_gray_i = np.float64(features_img) - np.float64(features_template)
             delta_gray[:, :i] = delta_gray_i
             #delta_motion_params[:, :i] = identity_params + delta_params
-            delta_motion_params[:, :i] = delta_params
+            delta_motion_params[:, i] = delta_params.squeeze()
 
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 print '{} \n'.format(i)
-
+            self.show_debug_info_inv_jacobians = False
             if self.show_debug_info_inv_jacobians:
                 # max_ = np.max(features_img)
                 # min_ = np.min(features_img)
@@ -181,9 +181,12 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         #  S. Holzer, M. Pollefeys, S. Illic, D. Tan, N. Navab
         #  ECCV 2012.
         # -----------------------------------------------------------------------
-        pinvY = np.dot(delta_motion_params.T, np.linalg.inv(np.dot(delta_motion_params, delta_motion_params.T)))
-        B = np.dot(delta_gray, pinvY)
-        A = np.linalg.pinv(B)
+        # pinvY = np.dot(delta_motion_params.T, np.linalg.inv(np.dot(delta_motion_params, delta_motion_params.T)))
+        # B = np.dot(delta_gray, pinvY)
+        # A = np.linalg.pinv(B)
+        H = np.linalg.pinv(delta_motion_params);
+        Y = delta_gray
+        A = (Y.dot(H)).T
         return A
 
         # -----------------------------------------------------------------
