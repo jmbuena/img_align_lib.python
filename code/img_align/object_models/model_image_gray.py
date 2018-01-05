@@ -45,8 +45,7 @@ class ModelImageGray(ObjectModel):
         template_image_coords are the same as the rectified image ones.
 
         The template_image_shape defines the size of the rectified template image
-        to use in tracking. I will be extracted from the template_image whether is
-        or is not a rectified image.
+        to use in tracking. I will be extracted from the template_image in any case.
 
         :param template_image: The template image itself
         :param template_image_coords: Nx2 numpy array with 2D coords of the pixels in the template image

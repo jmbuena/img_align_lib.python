@@ -40,7 +40,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, object_model, motion_model, num_samples=10000, show_debug_info=False):
+    def __init__(self, object_model, motion_model, num_samples=20000, show_debug_info=False):
         #low = None, high = None,
         """
         :param object_model: Object model to use in tracking
@@ -115,11 +115,11 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         invJ = np.zeros((self.motion_model.getNumParams(), template_coords.shape[0]), dtype=np.float64)
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        delta_motion_params = np.random.uniform(low=-0.0001, high=0.0001,
+        delta_motion_params = np.random.uniform(low=-0.001, high=0.001,
                                                 size=(self.motion_model.getNumParams(), self.num_samples))
 
         # delta_gray is N x num_samples (number of pixels x number of samples generated)
-        delta_gray = np.zeros((template_coords.shape[0], self.num_samples), dtype=np.float64)
+        delta_gray = np.zeros((template_coords.shape[0], self.num_samples))
 
         # generate samples around the identity parameters.
         features_template = self.object_model.computeReferenceFeatures()
@@ -131,16 +131,12 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
             coords = self.motion_model.map(template_coords, identity_params + delta_params)
             features_img = self.object_model.computeImageFeatures(template_image, coords)
             delta_gray_i = np.float64(features_img) - np.float64(features_template)
-            delta_gray[:, :i] = delta_gray_i
-            #delta_motion_params[:, :i] = identity_params + delta_params
-            delta_motion_params[:, :i] = delta_params
+            delta_gray[:, i] = delta_gray_i.T
 
             if i % 100 == 0:
                 print '{} \n'.format(i)
 
-            if self.show_debug_info_inv_jacobians:
-                # max_ = np.max(features_img)
-                # min_ = np.min(features_img)
+            if False: #self.show_debug_info_inv_jacobians:
                 features_img_show = self.object_model.convertReferenceFeaturesToImage(features_img)
                 warped_image_show = self.object_model.convertReferenceFeaturesToImage(features_img_show)
                 cv2.imshow("Warped Image", warped_image_show)
@@ -154,11 +150,11 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
                 diff_image_show = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(delta_gray_i)-min_)/(max_-min_))
                 cv2.imshow("Diff Image", diff_image_show)
 
-                diff_image_2 = np.float64(warped_image_show) - np.float64(template_image_show)
-                max_ = np.max(diff_image_2)
-                min_ = np.min(diff_image_2)
-                diff_image_2 = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(diff_image_2)-min_)/(max_-min_))
-                cv2.imshow("Diff2 Image", diff_image_2)
+                #diff_image_2 = np.float64(warped_image_show) - np.float64(template_image_show)
+                #max_ = np.max(diff_image_2)
+                #min_ = np.min(diff_image_2)
+                #diff_image_2 = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(diff_image_2)-min_)/(max_-min_))
+                #cv2.imshow("Diff2 Image", diff_image_2)
 
                 cv2.waitKey()
 
@@ -170,7 +166,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         #H2 = np.dot(delta_gray, delta_gray.T) + np.random.uniform(low=0.0, high=0.00001,
         #                                        size=(template_coords.shape[0], template_coords.shape[0]))
         #H2 = np.dot(delta_gray, delta_gray.T)
-        #invH2 = np.linalg.pinv(H2)
+        #invH2 = np.linalg.inv(H2)
         #pinvH = np.dot(delta_gray.T, invH2)
         #A = np.dot(delta_motion_params, pinvH)
         #return A
