@@ -35,8 +35,8 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         """
         super(CostFunL2ImagesInvComp, self).__init__(object_model, motion_model, show_debug_info)
 
-        self.show_debug_info_jacobians = False
-        self.show_debug_info_inv_jacobians = False
+        self.show_debug_info_jacobians = True
+        self.show_debug_info_inv_jacobians = True
         self.__initialized = False
         self.__J = None
         self.__invJ = None
@@ -74,7 +74,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
             for i in range(self.__invJ.shape[0]):
                 max_ = np.max(self.__invJ[i, :])
                 min_ = np.min(self.__invJ[i, :])
-                J_img = self.object_model.convertFeaturesToImage(255*(self.__invJ[i,:]-min_)/(max_-min_))
+                J_img = self.object_model.convertReferenceFeaturesToImage(255*(self.__invJ[i, :]-min_)/(max_-min_))
                 cv2.imshow('invJ{}'.format(i), np.uint8(J_img))
 
         return self.__invJ
@@ -142,17 +142,17 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
 
         return residuals
 
-    def updateMotionParams(self, motion_params, inc_params):
+    def updateMotionParams(self, motion_params, delta_params):
         """
           The updated motion params of an inverse compositional problem is given by
           f(f^{-1}(\vx, delta_params), params) = f(\vx, new_params)
 
           In the case of a homography motion model is given by:
 
-          H(motion_params) * inverse(H(inc_params + identity_params))
+          H(motion_params) * inverse(H(delta_params + identity_params))
 
         :param motion_params: old motion parameters
-        :param inc_params compositional update paramters vector
+        :param delta_params compositional update parameters vector
         :return: The updated motion params with old ones and the delta in parameters.
         """
 
@@ -160,7 +160,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         # with the parameters increment plus the identity params (this is necessary whenever the
         # motion model has no 0 identity motion parameters).
         identity_params = self.motion_model.getIdentityParams()
-        return self.motion_model.getCompositionWithInverseParams(motion_params, inc_params + identity_params)
+        return self.motion_model.getCompositionWithInverseParams(motion_params, delta_params + identity_params)
 
     def __computeConstantInverseJacobian(self):
         if self.__J is None:
