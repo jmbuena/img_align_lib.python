@@ -35,8 +35,8 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         """
         super(CostFunL2ImagesInvComp, self).__init__(object_model, motion_model, show_debug_info)
 
-        self.show_debug_info_jacobians = True
-        self.show_debug_info_inv_jacobians = True
+        self.show_debug_info_jacobians = show_debug_info
+        self.show_debug_info_inv_jacobians = show_debug_info
         self.__initialized = False
         self.__J = None
         self.__invJ = None

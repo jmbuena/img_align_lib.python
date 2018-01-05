@@ -108,11 +108,10 @@ class MotionHomography8P(MotionModel):
         H2 = np.reshape(np.append(motion_params2, 1.0), (3, 3))
 
         Hcomp = np.dot(H1, H2)
-        Hcomp = Hcomp / Hcomp[2, 2] # We make again 1 the coordinate [2, 2] in Hcomp.
+        Hcomp = Hcomp / Hcomp[2, 2]  # We make again 1 the coordinate [2, 2] in Hcomp.
 
         composition_params = np.copy(np.reshape(Hcomp, (9, 1)))
         return composition_params[0:8, :]
-
 
     def getCompositionWithInverseParams(self, motion_params1, motion_params2):
         """

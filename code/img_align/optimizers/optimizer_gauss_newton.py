@@ -69,10 +69,15 @@ class OptimizerGaussNewton(Optimizer):
 
             # compute residuals to minimize for new motion parameters
             residuals = self.cost_function.computeResiduals(frame, current_params)
+            print " -------------"
+            print " np.max(residuals)={}\n\n".format(np.max(residuals))
+            print " np.min(residuals)={}\n\n".format(np.min(residuals))
 
             # Compute normal equations
             invJ = self.cost_function.computeJacobianPseudoInverse(current_params)
             delta = np.dot(invJ, residuals)
+
+            print " delta={}\n\n".format(delta)
 
             # 2nd stopping criterion: The increment in the parameters vector
             # is under a given threshold.

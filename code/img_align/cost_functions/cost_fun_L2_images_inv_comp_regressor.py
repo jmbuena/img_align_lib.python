@@ -50,8 +50,8 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         """
         super(CostFunL2ImagesInvCompRegressor, self).__init__(object_model, motion_model, show_debug_info)
 
-        self.show_debug_info_jacobians = True
-        self.show_debug_info_inv_jacobians = True
+        self.show_debug_info_jacobians = show_debug_info
+        self.show_debug_info_inv_jacobians = show_debug_info
         self.num_samples = num_samples
         self.__initialized = False
         self.__J = None
@@ -106,20 +106,151 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         self.__J = self.__computeConstantJacobian()
 
         self.__initialized = True
-        return
+
+    def __generateDeltaParams2(self, template_coords, template_image, num_samples, object_model, motion_model):
+        """
+           Note: Does it work for non-planar motion models?
+
+        :param template_coords:
+        :param template_image:
+        :param num_samples:
+        :param motion_model:
+        :return:
+        """
+        Y = np.zeros((motion_model.getNumParams(), num_samples))
+
+        template_image, template_coords = object_model.getTemplateImageAndCoords()
+        ctrl_indices, ctrl_lines = object_model.getCtrlPointsIndices()
+
+        orig_pts = np.zeros((len(ctrl_indices), 2))
+        for i in range(orig_pts.shape[0]):
+            orig_pts[i, 0] = template_coords[ctrl_indices[i], 0]
+            orig_pts[i, 1] = template_coords[ctrl_indices[i], 1]
+
+        show_transformations = False
+
+        identity_params = motion_model.getIdentityParams()
+        for i in range(num_samples):
+            # Shake randomly the four corners (a little bit)
+            delta_pts = np.random.uniform(low=-5.0, high=5.0, size=(orig_pts.shape[0], 2))
+            dst_pts = orig_pts + delta_pts
+
+            # Compute motion params from origin and modified corners
+            new_params = motion_model.computeParams(orig_pts, dst_pts)
+
+            # Subtract identity params in order to keep all with zeros params vector as the identity
+            # transformation (needed in inverse compositional).
+            delta_params = new_params - identity_params
+            Y[:, i] = delta_params.T
+
+            if show_transformations:
+                template_image_copy = template_image.copy()
+                for j in range(orig_pts.shape[0]):
+                    cv2.line(template_image_copy,
+                             (int(orig_pts[j, 0]), int(orig_pts[j, 1])),
+                             (int(orig_pts[(j + 1) % 4, 0]), int(orig_pts[(j + 1) % 4, 1])),
+                             color=(0, 0, 255),  # red color
+                             thickness=2)
+
+
+                for j in range(dst_pts.shape[0]):
+                    cv2.line(template_image_copy,
+                             (int(dst_pts[j, 0]), int(dst_pts[j, 1])),
+                             (int(dst_pts[(j + 1) % 4, 0]), int(dst_pts[(j + 1) % 4, 1])),
+                             color=(255, 255, 255),  # white color
+                             thickness=1)
+
+                cv2.imshow("template image", template_image_copy)
+                cv2.waitKey()
+
+        return Y
+
+
+    def __generateDeltaParams(self, template_coords, template_image, num_samples, motion_model):
+        """
+           Note: Does it work for non-planar motion models?
+
+        :param template_coords:
+        :param template_image:
+        :param num_samples:
+        :param motion_model:
+        :return:
+        """
+        # num_samples_1_3 = int(round(num_samples/3.0))
+        # Y1 = np.random.uniform(low=0.0, high=0.0001,
+        #                        size=(motion_model.getNumParams(), num_samples_1_3))
+        # Y2 = np.random.uniform(low=-0.0001, high=0.0001,
+        #                        size=(motion_model.getNumParams(), num_samples_1_3))
+        # Y3 = np.random.uniform(low=-0.0001, high=0.0,
+        #                       size=(motion_model.getNumParams(), num_samples - 2*num_samples_1_3))
+        # Y = np.hstack((np.hstack((Y1, Y2)), Y3))
+
+        #Y = np.random.uniform(low=-0.0001, high=0.0001,
+        #                      size=(motion_model.getNumParams(), num_samples))
+
+        #Y = np.random.normal(loc=0.0, scale=0.001,
+        #                     size=(motion_model.getNumParams(), num_samples))
+
+        Y = np.zeros((motion_model.getNumParams(), num_samples))
+
+        min_x = np.min(template_coords[:, 0])
+        max_x = np.max(template_coords[:, 0])
+        min_y = np.min(template_coords[:, 1])
+        max_y = np.max(template_coords[:, 1])
+
+        orig_pts = np.array([[min_x, min_y],
+                             [max_x, min_y],
+                             [max_x, max_y],
+                             [min_x, max_y]], dtype=np.float64)
+
+        show_transformations = True
+
+        identity_params = motion_model.getIdentityParams()
+        for i in range(num_samples):
+            # Shake randomly the four corners (a little bit)
+            delta_pts = np.random.uniform(low=-5.0, high=5.0, size=(4, 2))
+            dst_pts = orig_pts + delta_pts
+
+            # Compute motion params from origin and modified corners
+            new_params = motion_model.computeParams(orig_pts, dst_pts)
+
+            # Subtract identity params in order to keep all with zeros params vector as the identity
+            # transformation (needed in inverse compositional).
+            delta_params = new_params - identity_params
+            Y[:, i] = delta_params.T
+
+            if show_transformations:
+                template_image_copy = template_image.copy()
+                for j in range(4):
+                    cv2.line(template_image_copy,
+                             (int(orig_pts[j, 0]), int(orig_pts[j, 1])),
+                             (int(orig_pts[(j + 1) % 4, 0]), int(orig_pts[(j + 1) % 4, 1])),
+                             color=(0, 0, 255),  # red color
+                             thickness=2)
+
+
+                for j in range(4):
+                    cv2.line(template_image_copy,
+                             (int(dst_pts[j, 0]), int(dst_pts[j, 1])),
+                             (int(dst_pts[(j + 1) % 4, 0]), int(dst_pts[(j + 1) % 4, 1])),
+                             color=(255, 255, 255),  # white color
+                             thickness=1)
+
+                cv2.imshow("template image", template_image_copy)
+                cv2.waitKey()
+
+        return Y
 
     def __computeConstantInverseJacobian(self):
 
         template_image, template_coords = self.object_model.getTemplateImageAndCoords()
-        #template_coords = self.object_model.getReferenceCoords()
-        invJ = np.zeros((self.motion_model.getNumParams(), template_coords.shape[0]), dtype=np.float64)
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        delta_motion_params = np.random.uniform(low=-0.001, high=0.001,
-                                                size=(self.motion_model.getNumParams(), self.num_samples))
+        # Y = self.__generateDeltaParams(template_coords, template_image, self.num_samples, self.motion_model)
+        Y = self.__generateDeltaParams2(template_coords, template_image, self.num_samples, self.object_model, self.motion_model)
 
-        # delta_gray is N x num_samples (number of pixels x number of samples generated)
-        delta_gray = np.zeros((template_coords.shape[0], self.num_samples))
+        # H is N x num_samples (number of pixels x number_samples generated)
+        H = np.zeros((template_coords.shape[0], self.num_samples), dtype=np.float64)
 
         # generate samples around the identity parameters.
         features_template = self.object_model.computeReferenceFeatures()
@@ -127,16 +258,31 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         identity_params = self.motion_model.getIdentityParams()
         for i in range(self.num_samples):
             # we are going to use a uniform sampling scheme for the motion parameters.
-            delta_params = np.reshape(delta_motion_params[:, i], (self.motion_model.getNumParams(), 1))
+            delta_params = np.reshape(Y[:, i], (self.motion_model.getNumParams(), 1))
             coords = self.motion_model.map(template_coords, identity_params + delta_params)
+
+            #homography = np.reshape(np.append(identity_params + delta_params, 1.0), (3, 3))
+            #print "homography={}\n\n".format(homography)
+
             features_img = self.object_model.computeImageFeatures(template_image, coords)
             delta_gray_i = np.float64(features_img) - np.float64(features_template)
-            delta_gray[:, i] = delta_gray_i.T
+            #print " -------------"
+            #print " np.max(delta_gray_i)={}\n\n".format(np.max(delta_gray_i))
+            #print " np.min(delta_gray_i)={}\n\n".format(np.min(delta_gray_i))
+            H[:, i] = delta_gray_i.T
 
-            if i % 100 == 0:
-                print '{} \n'.format(i)
+            if i % 1000 == 0:
+                print '{}'.format(i)
 
             if False: #self.show_debug_info_inv_jacobians:
+
+                template_image_copy = template_image.copy()
+                for j in range(coords.shape[0]):
+                    cv2.circle(template_image_copy,
+                               (int(coords[j, 0]), int(coords[j, 1])), 1, (0, 0., 255.),  # red color
+                               -1)  # filled
+                cv2.imshow("Points", template_image_copy)
+
                 features_img_show = self.object_model.convertReferenceFeaturesToImage(features_img)
                 warped_image_show = self.object_model.convertReferenceFeaturesToImage(features_img_show)
                 cv2.imshow("Warped Image", warped_image_show)
@@ -150,12 +296,6 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
                 diff_image_show = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(delta_gray_i)-min_)/(max_-min_))
                 cv2.imshow("Diff Image", diff_image_show)
 
-                #diff_image_2 = np.float64(warped_image_show) - np.float64(template_image_show)
-                #max_ = np.max(diff_image_2)
-                #min_ = np.min(diff_image_2)
-                #diff_image_2 = self.object_model.convertReferenceFeaturesToImage(255*(np.float64(diff_image_2)-min_)/(max_-min_))
-                #cv2.imshow("Diff2 Image", diff_image_2)
-
                 cv2.waitKey()
 
         # -----------------------------------------------------------------------
@@ -163,12 +303,10 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         # -----------------------------------------------------------------------
         # Note: H2 can be rank deficient as it is num_pixels x num_pixels matrix and we are using self.num_samples
         #       columns in delta_gray (delta_gray is num_pixels x self..num_samples).
-        #H2 = np.dot(delta_gray, delta_gray.T) + np.random.uniform(low=0.0, high=0.00001,
-        #                                        size=(template_coords.shape[0], template_coords.shape[0]))
-        #H2 = np.dot(delta_gray, delta_gray.T)
+        #H2 = np.dot(H, H.T)
         #invH2 = np.linalg.inv(H2)
-        #pinvH = np.dot(delta_gray.T, invH2)
-        #A = np.dot(delta_motion_params, pinvH)
+        #pinvH = np.dot(H.T, invH2)
+        #A = np.dot(Y, pinvH)
         #return A
 
         # -----------------------------------------------------------------------
@@ -177,14 +315,10 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         #  S. Holzer, M. Pollefeys, S. Illic, D. Tan, N. Navab
         #  ECCV 2012.
         # -----------------------------------------------------------------------
-        pinvY = np.dot(delta_motion_params.T, np.linalg.inv(np.dot(delta_motion_params, delta_motion_params.T)))
-        B = np.dot(delta_gray, pinvY)
+        pinvY = np.dot(Y.T, np.linalg.inv(np.dot(Y, Y.T)))
+        B = np.dot(H, pinvY)
         A = np.linalg.pinv(B)
         return A
-
-        # -----------------------------------------------------------------
-
-        #return np.dot(delta_motion_params, np.linalg.pinv(delta_gray))
 
     def __computeConstantJacobian(self):
 
