@@ -97,7 +97,7 @@ class MotionHomography8P(MotionModel):
         Le f(x, p) = H(p)*(x, 1)^T the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the motion model params, composition_params,
         such as:
-            f(x, composition_params) =  H(motion_params1)*H(motion_params_2)*(x, 1)^T
+            f(x, composition_params) =  H(motion_params2)*H(motion_params_1)*(x, 1)^T
 
         :param motion_params1: motion params for f(x, motion_params1).
         :param motion_params2: motion params for second application of f.
@@ -107,7 +107,7 @@ class MotionHomography8P(MotionModel):
         H1 = np.reshape(np.append(motion_params1,  1.0), (3, 3))
         H2 = np.reshape(np.append(motion_params2, 1.0), (3, 3))
 
-        Hcomp = np.dot(H1, H2)
+        Hcomp = np.dot(H2, H1)
         Hcomp = Hcomp / Hcomp[2, 2]  # We make again 1 the coordinate [2, 2] in Hcomp.
 
         composition_params = np.copy(np.reshape(Hcomp, (9, 1)))
@@ -118,7 +118,7 @@ class MotionHomography8P(MotionModel):
         Le f(x, p) = H(p)*(x, 1)^T the motion model function, with motion parameters p, that
         transforms coordinates x. This method computes the motion model params, composition_params,
         such as:
-            f(x, composition_params) =  H(motion_params1)*H(motion_params_2)^{-1}*(x, 1)^T
+            f(x, composition_params) =  H(motion_params2)*H(motion_params_1)^{-1}*(x, 1)^T
 
         :param motion_params1: motion params for application of f^{-1}.
         :param motion_params2: motion params for f(x, motion_params1).
@@ -128,7 +128,7 @@ class MotionHomography8P(MotionModel):
         H1 = np.reshape(np.append(motion_params1, 1.0), (3, 3))
         H2 = np.reshape(np.append(motion_params2, 1.0), (3, 3))
 
-        Hcomp = np.dot(H1, np.linalg.pinv(H2))
+        Hcomp = np.dot(H2, np.linalg.pinv(H1))
         Hcomp = Hcomp / Hcomp[2, 2]  # We make again 1 the coordinate [2, 2] in Hcomp.
 
         composition_params = np.copy(np.reshape(Hcomp, (9, 1)))
@@ -270,4 +270,34 @@ class MotionHomography8P(MotionModel):
 
         return detA * detB >= 0.
 
+    def generateRandomParamsIncrements(self, num_samples, n_sigmas=1):
+        """
+        Generates num_samples small increments motion params vectors at random. The random values
+        are generated with an uniform distribution between -n_sigmas*sigma and +n_sigmas*sigma, being
+        sigma the base standard deviation for that motion parameter.
+
+        Note that here the parameters are p = np.array([[a], [b], [c], [d], [e], [f], [g], [h]])
+        from an homography:
+
+              H = np.array([[a, b, c],
+                            [d, e, f],
+                            [g, h, 1.0]])
+
+        therefore, we are going to set sigma (std deviations) vector for the parameters as:
+
+        sigma = np.array([[0.001], [0.001], [3.0], [0.001], [0.001], [3.0], [0.001], [0.001]])
+
+        :param num_samples:
+        :return: A num_params x num_samples numpy array with the random params by columns
+        """
+
+        sigma = np.array([[0.001], [0.001], [2.0], [0.001], [0.001], [2.0], [0.001], [0.001]])
+
+        params_deltas = np.zeros((8, num_samples))
+        for i in range(8):
+            low_val = -n_sigmas * sigma[i]
+            high_val = n_sigmas * sigma[i]
+            params_deltas[i, :] = np.random.uniform(low=low_val, high=high_val, size=(1, num_samples))
+
+        return params_deltas
 

@@ -153,7 +153,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
             orig_pts[i, 1] = template_coords[ctrl_indices[i], 1]
 
         params_ref2orig = motion_model.computeParams(orig_ref_pts, orig_pts)
-        homography_ref2orig = np.reshape(np.append(params_ref2orig, 1.0), (3, 3))
+        #homography_ref2orig = np.reshape(np.append(params_ref2orig, 1.0), (3, 3))
 
         show_transformations = False
 
@@ -193,7 +193,48 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
                 cv2.imshow("template image", template_image_copy)
                 cv2.waitKey()
 
-        return Y, homography_ref2orig
+        return Y, params_ref2orig
+
+    def __generateDeltaParams2(self, template_reference_coords, template_coords,
+                              template_image, num_samples, object_model, motion_model):
+        """
+        Generates the delta motion params for the template image. Note that there are two
+        types of template coords:
+
+          - The reference template coords. This coordinates are for a rectified template image
+            with the origin of 2D coordinates in the center of the template (the top left corner is
+            [-width/2, -heigh/2].
+          - The template coords. This coordinates are the transformed reference coordinates over the
+            image with the template embedded (e.g. an image of a book on a table).
+
+        The increment in motion parameters are computed over the reference template coords. This is the key
+        for this method to work (it is the same point at which we compute the motion model jacobian
+        in the Inverse Compositional implementation we have).
+
+        :param template_reference_coords:
+        :param template_coords:
+        :param template_image:
+        :param num_samples:
+        :param motion_model:
+        :return:
+        """
+
+        ctrl_indices, ctrl_lines = object_model.getCtrlPointsIndices()
+
+        orig_ref_pts = np.zeros((len(ctrl_indices), 2))
+        for i in range(orig_ref_pts.shape[0]):
+            orig_ref_pts[i, 0] = template_reference_coords[ctrl_indices[i], 0]
+            orig_ref_pts[i, 1] = template_reference_coords[ctrl_indices[i], 1]
+
+        orig_pts = np.zeros((len(ctrl_indices), 2))
+        for i in range(orig_pts.shape[0]):
+            orig_pts[i, 0] = template_coords[ctrl_indices[i], 0]
+            orig_pts[i, 1] = template_coords[ctrl_indices[i], 1]
+
+        params_ref2orig = motion_model.computeParams(orig_ref_pts, orig_pts)
+        Y = motion_model.generateRandomParamsIncrements(num_samples, n_sigmas=1)
+
+        return Y, params_ref2orig
 
     def __computeConstantInverseJacobian(self):
 
@@ -201,8 +242,15 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         template_reference_coords = self.object_model.getReferenceCoords()
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        Y, homography_ref2img = self.__generateDeltaParams(template_reference_coords, template_coords, template_image,
-                                                            self.num_samples, self.object_model, self.motion_model)
+        # Y, ref2img_params = self.__generateDeltaParams(template_reference_coords, template_coords, template_image,
+        #                                                self.num_samples, self.object_model, self.motion_model)
+        # Y, homography_ref2img = self.__generateDeltaParams(template_reference_coords, template_coords, template_image,
+        #                                                self.num_samples, self.object_model, self.motion_model)
+        # ref2img_params = np.copy(np.reshape(homography_ref2img, (9, 1)))
+        # ref2img_params = ref2img_params[0:8, :]
+
+        Y, ref2img_params = self.__generateDeltaParams2(template_reference_coords, template_coords, template_image,
+                                                        self.num_samples, self.object_model, self.motion_model)
 
         # H is N x num_samples (number of pixels x number_samples generated)
         H = np.zeros((template_coords.shape[0], self.num_samples), dtype=np.float64)
@@ -214,12 +262,8 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         for i in range(self.num_samples):
             # we are going to use a uniform sampling scheme for the motion parameters.
             delta_params = np.reshape(Y[:, i], (self.motion_model.getNumParams(), 1))
-
-            homography = np.reshape(np.append(identity_params + delta_params, 1.0), (3, 3))
-            homography = np.dot(homography_ref2img, homography)
-            params = np.copy(np.reshape(homography, (9, 1)))
-            params = params[0:8, :]
-
+            delta_params_transform = identity_params + delta_params
+            params = self.motion_model.getCompositionParams(delta_params_transform, ref2img_params)
             coords = self.motion_model.map(template_reference_coords, params)
 
             features_img = self.object_model.computeImageFeatures(template_image, coords)

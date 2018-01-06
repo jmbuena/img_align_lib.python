@@ -160,7 +160,7 @@ class CostFunL2ImagesInvComp(CostFunL2Images):
         # with the parameters increment plus the identity params (this is necessary whenever the
         # motion model has no 0 identity motion parameters).
         identity_params = self.motion_model.getIdentityParams()
-        return self.motion_model.getCompositionWithInverseParams(motion_params, delta_params + identity_params)
+        return self.motion_model.getCompositionWithInverseParams(delta_params + identity_params, motion_params)
 
     def __computeConstantInverseJacobian(self):
         if self.__J is None:
