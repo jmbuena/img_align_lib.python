@@ -12,6 +12,7 @@
 import abc
 from img_align.cost_functions import CostFunction
 
+
 class CostFunL2Images(CostFunction):
     """
     The interface for the Cost Functions that compare grey levels (or descriptors) of
@@ -27,7 +28,7 @@ class CostFunL2Images(CostFunction):
     I(f(x,p_t), t) is the warped image (indexed with template coordinates x) taken
     from the image I(y,t).
 
-    Different image alignment solutions arises from different asumptions based on the
+    Different image alignment solutions arises from different assumptions based on the
     BCA:
 
     1)  || I(f(x, p_t+1 + \delta p), t+1) - T(x) ||^2 (Lucas-Kanade, Hager's Jacobian factorization).

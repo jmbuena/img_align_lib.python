@@ -1,3 +1,4 @@
+
 # @brief motion model (function) in direct methods tracking.
 # @author Jose M. Buenaposada
 # @date 2017/08/14 (Modified)
@@ -95,26 +96,13 @@ class MotionModel:
         """
         return
 
-    # @abc.abstractmethod
-    # def compute_hessian(self, coords, motion_params):
-    #     """
-    #     Computes the second derivative for the motion model, at given coordinates
-    #     and motion params.
-    #     """
-    #     return
-
-    # @abc.abstractmethod
-    # def warpImage(self, image, motion_params, template_coords):
-    #      """
-    #
-    #      Get the grey levels
-    #
-    #      :param image: This is the input image
-    #      :param motion_params: Actual motion model parameters
-    #      :param template_coords: template coords to map with motion params
-    #      :return:
-    #      """
-    #      return
+    @abc.abstractmethod
+    def computeParams(self, points_orig, points_dest):
+        """
+        :param points_orig
+        :param points_dest
+        :return the motion params that maps points_orig into points_dest:
+        """
 
     @abc.abstractmethod
     def getIdentityParams(self):
@@ -123,15 +111,25 @@ class MotionModel:
 
             motion_model.map(coords, motion_params) returns coords
 
-        :return:
+        :return the identity parameter numpy array:
         """
         return
-
 
     @abc.abstractmethod
     def getNumParams(self):
         return
 
-
     def validParams(self, motion_params):
         return True
+
+    @abc.abstractmethod
+    def generateRandomParamsIncrements(self, num_samples, n_sigmas=1):
+        """
+        Generates num_samples small increments motion params vectors at random. The random values
+        are generated with an uniform distribution between -n_sigmas*sigma and +n_sigmas*sigma, being
+        sigma the base standard deviation for that motion parameter.
+
+        :param num_samples:
+        :return: A num_params x num_samples numpy array with the random params by columns
+        """
+        return

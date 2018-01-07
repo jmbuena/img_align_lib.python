@@ -1,0 +1,60 @@
+<test>
+  <experiment_name>fi-br-m5.avi.Homography8P.GrayImage.L2ImagesInvComp.GaussNewton</experiment_name>
+  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/fi-br-m5.avi.warps.sequence.xml</sequence>
+  <execution_parameters>
+    <save_dir>resources/visual_tracking_dataset/bricks/results/fi-br-m5.avi.results</save_dir>
+    <show>true</show>
+  </execution_parameters>
+  <algorithm>
+    <motion_model>
+      <name>Homography8P</name>
+    </motion_model>
+    <object_model>
+      <name>ImageGray</name>
+      <parameters>
+        <param>
+          <name>template_image_shape</name>
+          <type>num_list</type>
+          <value>50 100</value>
+        </param>
+        <param>
+          <name>template_equalize</name>
+          <type>bool</type>
+          <value>True</value>
+        </param>
+      </parameters>
+    </object_model>
+    <cost_function>
+      <name>L2ImagesInvComp</name>
+      <parameters>
+        <param>
+          <name>show_debug_info</name>
+          <type>bool</type>
+          <value>False</value>
+        </param>
+      </parameters>
+    </cost_function>
+    <optimizer>
+      <name>GaussNewton</name>
+      <parameters>
+        <param>
+          <name>max_iter</name>
+          <type>int</type>
+          <value>20</value>
+        </param>
+        <param>
+          <name>show_iter</name>
+          <type>bool</type>
+          <value>False</value>
+        </param>
+        <param>
+          <name>profiling</name>
+          <type>bool</type>
+          <value>True</value>
+        </param>
+      </parameters>
+    </optimizer>
+  </algorithm>
+</test>
+
+

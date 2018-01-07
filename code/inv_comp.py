@@ -14,6 +14,7 @@ point_to_add = None
 point_index = True
 moving_point = False
 
+
 def on_mouse_event(event, x, y, flags, frame):
     # grab references to the global variables
     global template_points, point_to_add, point_index, moving_point
@@ -25,9 +26,9 @@ def on_mouse_event(event, x, y, flags, frame):
     if event == cv2.EVENT_LBUTTONDOWN:
         if len(template_points) > 1:
             distances = [math.sqrt((template_points[i][0]-x)**2 +
-                                   (template_points[i][1]-y)**2)  for i in range(len(template_points))]
+                                   (template_points[i][1]-y)**2) for i in range(len(template_points))]
             distances = np.array(distances)
-            min_dist  = distances.min()
+            min_dist = distances.min()
             if min_dist < 10:
                  point_index = distances.argmin()
                  moving_point = True
@@ -41,8 +42,8 @@ def on_mouse_event(event, x, y, flags, frame):
         font = cv2.FONT_HERSHEY_SIMPLEX
         copy_frame = np.copy(frame)
         for i in range(len(template_points)):
-            cv2.circle(copy_frame,template_points[i],5,(0,0,255),-1)
-            cv2.putText(copy_frame, str(i),template_points[i], font, 1, (255,255,255),2)
+            cv2.circle(copy_frame,template_points[i], 5, (0, 0, 255), -1)
+            cv2.putText(copy_frame, str(i), template_points[i], font, 1, (255, 255, 255), 2)
         cv2.imshow("image", copy_frame)
 
     # check to see if the left mouse button was released
@@ -57,6 +58,7 @@ def on_mouse_event(event, x, y, flags, frame):
         for i in range(len(template_points)):
             cv2.circle(copy_frame,template_points[i],5,(0,0,255),-1)
         cv2.imshow("image", copy_frame)
+
 
 def warpImageWithPerspective(image, template_dims, points):
     template_width = template_dims[0]
@@ -92,8 +94,8 @@ def warpImageWithPerspective(image, template_dims, points):
     initial_params = np.copy(np.reshape(H2,(9,1)))
     initial_params = initial_params[0:8, :]
 
-
     return (template_img, initial_params)
+
 
 def getCommandLineTemplateImg(template_dims, coords, video_source):
     """
@@ -114,7 +116,7 @@ def getCommandLineTemplateImg(template_dims, coords, video_source):
     cv2.namedWindow('image')
     gray = None
     ret, frame = video_capture.read()
-    if (frame is not None):
+    if frame is not None:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     else:
         print "Error in capture"
@@ -161,7 +163,7 @@ def getInteractiveTemplateImg(template_dims, video_source):
     gray = None
     while True:
         ret, frame = video_capture.read()
-        if (frame is not None):
+        if frame is not None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             cv2.imshow('image', frame)
             cv2.setMouseCallback('image', on_mouse_event, frame)
@@ -179,8 +181,8 @@ def getInteractiveTemplateImg(template_dims, video_source):
 
     return warpImageWithPerspective(gray, template_dims, template_points)
 
-def main(args):
 
+def main(args):
     video_source = args.video_source
     if args.video_source is None:
         video_source = 0
@@ -197,7 +199,7 @@ def main(args):
     motion_model = MotionHomography8P()
     object_model = ModelImageGray(template_img, equalize=True)
     cost_function = CostFunL2ImagesInvComp(object_model, motion_model, show_debug_info=False)
-    optim = OptimizerGaussNewton(cost_function, max_iter=20, show_iter=False)
+    optim = OptimizerGaussNewton(cost_function, max_iter=40, show_iter=False)
 
     # Setup the tracker that uses a pyramid to track fast motion.
     tracker = TrackerGrayImagePyramid(optimizer=optim, pyramid_levels=2)
@@ -211,13 +213,13 @@ def main(args):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         tracker.processFrame(gray)
+        tracker.showResults(frame)
 
         # Display the resulting frame
-        tracker.showResults(frame)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(10) & 0xFF == ord('q'):
-             break
+            break
 
     # When everything is done, release the capture
     video_capture.release()
@@ -232,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument('--template_corners', dest='template_corners', nargs=8,
                         help='template corners list in "x0 y0 x1 y1 x2 y2 x3 y3" format, without quotes (default: [])')
     parser.add_argument('--template_dims', dest='template_dims', nargs=2,
-                        default=[200, 100],
+                        default=[80, 80],
                         help='template dims list in "width height" format, without quotes (default: [200, 100])')
 
     args = parser.parse_args()
