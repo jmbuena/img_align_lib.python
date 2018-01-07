@@ -123,7 +123,7 @@ class ModelImageGray(ObjectModel):
         else:
             self.__image_rectified = np.copy(template_image_rectified)
 
-#        self.__image_rectified = cv2.GaussianBlur(self.__image_rectified, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
+        self.__image_rectified = cv2.GaussianBlur(self.__image_rectified, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
         if self.__equalize:
             self.__image_rectified = cv2.equalizeHist(self.__image_rectified)
 
@@ -237,7 +237,7 @@ class ModelImageGray(ObjectModel):
         if self.__image is None:
             self.setTemplateImage(warped_img)
 
-#        warped_img = cv2.GaussianBlur(warped_img, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
+        warped_img = cv2.GaussianBlur(warped_img, ksize=(5, 5), sigmaX=1.5, sigmaY=1.5)
         if self.__equalize:
             warped_img = np.float64(cv2.equalizeHist(warped_img))
 

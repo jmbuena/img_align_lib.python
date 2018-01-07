@@ -78,29 +78,23 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
                        (0, 0., 255.),  # red color
                        -1)  # filled
 
-    def inv_comp(self):
-
-        # # template = cv2.imread(os.path.join('resources', 'book_lowres.jpg'))
-        # template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
-        # initial_params = self.getInitialParams(template)
-        # self.assertTrue(template is not None)
-        # object_model = ModelImageGray(template, equalize=True)
-        # motion_model = MotionHomography8P()
+    def test_inv_comp(self):
 
         # For generating different examples, the template should be a full image with the template
-        # (i.e. book cover) embedded
+        # (i.e. book cover) embedded in the middle of the image.
         template = cv2.imread(os.path.join('resources', 'book_mp4_first_image.jpg'))
+        self.assertTrue(template is not None)
+
         # The rectified template (fronto-parallel image of the book).
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_80x73.jpg'))
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_53x49.jpg'))
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_26x24.jpg'))
         rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
+        self.assertTrue(rectified_template is not None)
         if len(rectified_template.shape) == 3:
-               rectified_template = cv2.cvtColor(rectified_template, cv2.COLOR_RGB2GRAY)
+            rectified_template = cv2.cvtColor(rectified_template, cv2.COLOR_RGB2GRAY)
 
         initial_params = self.getInitialParams(rectified_template)
-
-        self.assertTrue(template is not None)
 
         object_model = ModelImageGray(template_image_shape=rectified_template.shape, equalize=True)
         motion_model = MotionHomography8P()
@@ -110,27 +104,28 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
         object_model.setTemplateImage(template, template_coords)
 
         cost_function = CostFunL2ImagesInvComp(object_model, motion_model, show_debug_info=False)
-        optimizer = OptimizerGaussNewton(cost_function, max_iter=40, show_iter=False)
+        optimizer = OptimizerGaussNewton(cost_function, max_iter=30, show_iter=False)
 
         self.tracking(initial_params, object_model, motion_model, optimizer)
 
-    def test_inv_comp_regressor(self): #test_inv_comp_regressor(self):
+    def test_inv_comp_regressor(self):
 
         # For generating different examples, the template should be a full image with the template
-        # (i.e. book cover) embedded
+        # (i.e. book cover) embedded in the middle of the image
         template = cv2.imread(os.path.join('resources', 'book_mp4_first_image.jpg'))
+        self.assertTrue(template is not None)
+
         # The rectified template (fronto-parallel image of the book).
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_80x73.jpg'))
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_53x49.jpg'))
         #rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template_26x24.jpg'))
         rectified_template = cv2.imread(os.path.join('resources', 'book_mp4_template.jpg'))
+        self.assertTrue(rectified_template is not None)
         if len(rectified_template.shape) == 3:
             rectified_template = cv2.cvtColor(rectified_template, cv2.COLOR_RGB2GRAY)
 
         initial_params = self.getInitialParams(rectified_template)
-
-        self.assertTrue(template is not None)
 
         object_model = ModelImageGray(template_image_shape=rectified_template.shape, equalize=True)
         motion_model = MotionHomography8P()
@@ -141,7 +136,7 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
         object_model.setTemplateImage(template, template_coords)
 
         cost_function = CostFunL2ImagesInvCompRegressor(object_model, motion_model, show_debug_info=True)
-        optimizer = OptimizerGaussNewton(cost_function, max_iter=10, show_iter=False)
+        optimizer = OptimizerGaussNewton(cost_function, max_iter=30, show_iter=False)
 
         self.tracking(initial_params, object_model, motion_model, optimizer)
 

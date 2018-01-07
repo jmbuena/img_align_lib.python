@@ -47,12 +47,12 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, object_model, motion_model, num_samples=20000, show_debug_info=False):
-        #low = None, high = None,
+    def __init__(self, object_model, motion_model, num_samples=20000, show_debug_info=False, shake_corners=False):
         """
         :param object_model: Object model to use in tracking
         :param motion_model: Motion model to use in tracking.
         :param num_samples: Number os samples (motion params, image features differences) to generate
+        :param shake_corners: move randomly the four corners of the template to generate samples
         :return:
         """
         super(CostFunL2ImagesInvCompRegressor, self).__init__(object_model, motion_model, show_debug_info)
@@ -61,6 +61,7 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         self.show_debug_info_inv_jacobians = show_debug_info
         self.show_debug_info_regressor = False
         self.num_samples = num_samples
+        self.shake_corners = shake_corners
         self.__initialized = False
         self.__J = None
         self.__invJ = None
@@ -114,8 +115,8 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
 
         self.__initialized = True
 
-    def __generateDeltaParams(self, template_reference_coords, template_coords,
-                              template_image, num_samples, object_model, motion_model):
+    def __generateDeltaParamsCorners(self, template_reference_coords, template_coords,
+                                     template_image, num_samples, object_model, motion_model):
         """
         Generates the delta motion params for the template image. Note that there are two
         types of template coords:
@@ -153,7 +154,6 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
             orig_pts[i, 1] = template_coords[ctrl_indices[i], 1]
 
         params_ref2orig = motion_model.computeParams(orig_ref_pts, orig_pts)
-        #homography_ref2orig = np.reshape(np.append(params_ref2orig, 1.0), (3, 3))
 
         show_transformations = False
 
@@ -195,8 +195,8 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
 
         return Y, params_ref2orig
 
-    def __generateDeltaParams2(self, template_reference_coords, template_coords,
-                              template_image, num_samples, object_model, motion_model):
+    def __generateDeltaParamsRandomParams(self, template_reference_coords, template_coords,
+                                         template_image, num_samples, object_model, motion_model):
         """
         Generates the delta motion params for the template image. Note that there are two
         types of template coords:
@@ -248,9 +248,12 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         #                                                self.num_samples, self.object_model, self.motion_model)
         # ref2img_params = np.copy(np.reshape(homography_ref2img, (9, 1)))
         # ref2img_params = ref2img_params[0:8, :]
-
-        Y, ref2img_params = self.__generateDeltaParams2(template_reference_coords, template_coords, template_image,
-                                                        self.num_samples, self.object_model, self.motion_model)
+        if self.shake_corners:
+            Y, ref2img_params = self.__generateDeltaParamsCorners(template_reference_coords, template_coords, template_image,
+                                                                  self.num_samples, self.object_model, self.motion_model)
+        else:
+            Y, ref2img_params = self.__generateDeltaParamsRandomParams(template_reference_coords, template_coords, template_image,
+                                                                       self.num_samples, self.object_model, self.motion_model)
 
         # H is N x num_samples (number of pixels x number_samples generated)
         H = np.zeros((template_coords.shape[0], self.num_samples), dtype=np.float64)
@@ -262,8 +265,10 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         for i in range(self.num_samples):
             # we are going to use a uniform sampling scheme for the motion parameters.
             delta_params = np.reshape(Y[:, i], (self.motion_model.getNumParams(), 1))
+
             delta_params_transform = identity_params + delta_params
             params = self.motion_model.getCompositionParams(delta_params_transform, ref2img_params)
+
             coords = self.motion_model.map(template_reference_coords, params)
 
             features_img = self.object_model.computeImageFeatures(template_image, coords)

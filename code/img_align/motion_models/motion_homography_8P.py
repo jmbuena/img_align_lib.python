@@ -285,13 +285,15 @@ class MotionHomography8P(MotionModel):
 
         therefore, we are going to set sigma (std deviations) vector for the parameters as:
 
-        sigma = np.array([[0.001], [0.001], [3.0], [0.001], [0.001], [3.0], [0.001], [0.001]])
+        sigma = np.array([[0.01], [0.01], [5.0], [0.01], [0.01], [5.0], [0.001], [0.001]])
 
         :param num_samples:
         :return: A num_params x num_samples numpy array with the random params by columns
         """
 
-        sigma = np.array([[0.001], [0.001], [2.0], [0.001], [0.001], [2.0], [0.001], [0.001]])
+        inc_num = 0.01
+        inc_num2 = 0.001
+        sigma = np.array([[inc_num], [inc_num], [5.0], [inc_num], [inc_num], [5.0], [inc_num2], [inc_num2]])
 
         params_deltas = np.zeros((8, num_samples))
         for i in range(8):
