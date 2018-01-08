@@ -2,14 +2,15 @@
 from setuptools import setup
 #
 setup(
-     name='img_align_lib',
-     # Current version of libobjlocator
-     version='1.0.0',
-     description='Python routines for vision packages',
+     name='img_alig',
+     # Current version of img_align
+     version='0.1.0',
+     description='Algorithms for image alignment with direct methods',
      author='Jose Miguel Buenaposada',
-     author_email='errbuena@gmail.com',
+     author_email='josemiguel.buenaposada@urjc.es',
      # Packages included in the distribution
      packages=[
+              'img_align',
               'img_align.cost_functions',
               'img_align.motion_models',
               'img_align.object_models',
