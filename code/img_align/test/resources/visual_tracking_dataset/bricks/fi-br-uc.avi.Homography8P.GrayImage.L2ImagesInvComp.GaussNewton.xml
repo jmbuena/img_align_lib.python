@@ -1,8 +1,8 @@
 <test>
-  <experiment_name>fi-br-ld.avi.Homography8P.GrayImage.L2ImagesInvComp.GaussNewton</experiment_name>
-  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/fi-br-ld.avi.warps.sequence.xml</sequence>
+  <experiment_name>fi-br-uc.avi.Homography8P.GrayImage.L2ImagesInvComp.GaussNewton</experiment_name>
+  <sequence>resources/visual_tracking_dataset/bricks/ground_truth/fi-br-uc.avi.warps.sequence.xml</sequence>
   <execution_parameters>
-    <save_dir>resources/visual_tracking_dataset/bricks/results/fi-br-ld.avi.results</save_dir>
+    <save_dir>resources/visual_tracking_dataset/bricks/results/fi-br-uc.avi.results</save_dir>
     <show>true</show>
   </execution_parameters>
   <algorithm>

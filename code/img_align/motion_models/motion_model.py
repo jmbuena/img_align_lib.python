@@ -97,13 +97,21 @@ class MotionModel:
         return
 
     @abc.abstractmethod
+    def computeParams(self, points_orig, points_dest):
+        """
+        :param points_orig
+        :param points_dest
+        :return the motion params that maps points_orig into points_dest:
+        """
+
+    @abc.abstractmethod
     def getIdentityParams(self):
         """
         Get the motion params that maps coords in the same coords.
 
             motion_model.map(coords, motion_params) returns coords
 
-        :return:
+        :return the identity parameter numpy array:
         """
         return
 
@@ -113,3 +121,15 @@ class MotionModel:
 
     def validParams(self, motion_params):
         return True
+
+    @abc.abstractmethod
+    def generateRandomParamsIncrements(self, num_samples, n_sigmas=1):
+        """
+        Generates num_samples small increments motion params vectors at random. The random values
+        are generated with an uniform distribution between -n_sigmas*sigma and +n_sigmas*sigma, being
+        sigma the base standard deviation for that motion parameter.
+
+        :param num_samples:
+        :return: A num_params x num_samples numpy array with the random params by columns
+        """
+        return

@@ -10,11 +10,13 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import abc
-import numpy as np
-import cv2
-import img_align.object_models
+#import numpy as np
+#import cv2
+from img_align.cost_functions import CostFunctionFactory
+from img_align.optimizers import OptimizerGaussNewton
 
-class OpitimizerFactory:
+
+class OptimizerFactory:
     """
     The interface for the factory of Optimization algorithms.
     """
@@ -40,7 +42,8 @@ class OpitimizerFactory:
         if (optimizer_name == '') or (optimizer_name is None):
             return ValueError('optimizer_name param is empty')
 
-        cost_function = CostFunctionsFactory.getCostFunction(config)
+        cf_factory = CostFunctionFactory()
+        cost_function = cf_factory.getCostFunction(config)
 
         if optimizer_name == 'GaussNewton':
 
@@ -56,6 +59,9 @@ class OpitimizerFactory:
 
             if 'show_iter' in config:
                 optimizer_params['show_iter'] = config['show_iter']
+
+            if 'profiling' in config:
+                optimizer_params['profiling'] = config['profiling']
 
             return OptimizerGaussNewton(cost_function, **optimizer_params)
 

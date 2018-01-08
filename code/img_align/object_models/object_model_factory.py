@@ -12,7 +12,8 @@
 import abc
 import numpy as np
 import cv2
-import img_align.object_models
+#from img_align.object_models import ModelImageGray
+from img_align.object_models import ModelImageGrayFactory
 
 
 class ObjectModelFactory:
@@ -42,24 +43,31 @@ class ObjectModelFactory:
             return ValueError('object_model_name param is empty')
 
         if object_model_name == 'ImageGray':
+            factory = ModelImageGrayFactory()
+            return factory.getObjectModel(config)
 
-            if 'template_image' not in config:
-                raise LookupError('template_image param missing')
+        # Add other Object Model creation code here:
+        #elif object_model_name == 'OM':
+        #   factory = OMFactory()
+        #   return factory.getObjectModel()
 
-            template_image = config['template_image']
-            if template_image is None:
-                raise ValueError('template_image param is empty')
-
-            if not isinstance(template_image, np.array):
-                template_image = cv2.imread(template_image)
-
-            if 'template_equalize' not in config:
-                template_equalize = False
-            else:
-                template_equalize = config['template_equalize']
-                if template_equalize is None:
-                    template_equalize = False
-
-            return ModelImageGray(template_image, equalize=template_equalize)
+            # if 'template_image' not in config:
+            #     raise LookupError('template_image param missing')
+            #
+            # template_image = config['template_image']
+            # if template_image is None:
+            #     raise ValueError('template_image param is empty')
+            #
+            # if not isinstance(template_image, np.ndarray):
+            #     template_image = cv2.imread(template_image)
+            #
+            # if 'template_equalize' not in config:
+            #     template_equalize = False
+            # else:
+            #     template_equalize = config['template_equalize']
+            #     if template_equalize is None:
+            #         template_equalize = False
+            #
+            # return ModelImageGray(template_image, equalize=template_equalize)
 
         return ValueError('object_model_name value {} is not recognized'.format(object_model_name))

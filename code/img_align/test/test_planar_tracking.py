@@ -10,12 +10,13 @@
 
 import os
 import unittest
-from img_align.test import TrackingExperiment
-from img_align.test import TrackingExperimentsSet
+from img_align.test import ExperimentPlanarTracking
+from img_align.test import ExperimentsSetPlanarTracking
 import img_align.motion_models
 import img_align.object_models
 import img_align.cost_functions
 import img_align.optimizers
+
 
 class TestPlanarTracking(unittest.TestCase):
 
@@ -31,19 +32,24 @@ class TestPlanarTracking(unittest.TestCase):
         https://ilab.cs.ucsb.edu/tracking_dataset_ijcv/
         '''
 
+        bricks_path = os.path.join('resources', 'visual_tracking_dataset', 'bricks')
+        exp_set = self.runOnBricksSubset(bricks_path)
+        self.evaluateOnBricksSubset(bricks_path, exp_set)
+
+    def evaluateOnBricksSubset(self, exp_path, exp_set):
+        exp_set.evaluateResults(exp_path)
+
+    def runOnBricksSubset(self, exp_path):
+
         # BRICKS part of the dataset:
-        exp_set = TrackingExperimentsSet()
-        exp_path = os.path.join('resources', 'visual_tracking_dataset', 'bricks')
+        exp_set = ExperimentsSetPlanarTracking()
         for exp_file in os.listdir(exp_path):
             if exp_file.endswith('.xml'):
-                e = TrackingExperiment(os.path.join(exp_path, exp_file))
-                e.load()
+                e = ExperimentPlanarTracking(os.path.join(exp_path, exp_file))
+                e.open()
                 exp_set.add(e)
 
         exp_set.run()
-        results_dir = os.path.join('resources', 'bricks', 'results')
-        gt_dir = os.path.join('resources', 'bricks', 'ground_truth')
-        evaluation_dir = os.path.join('resources', 'bricks', 'evaluation')
-        exp_set.evaluateResults(gt_dir, results_dir, evaluation_dir)
 
+        return exp_set
 

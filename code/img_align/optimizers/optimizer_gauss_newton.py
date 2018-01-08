@@ -10,8 +10,10 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import numpy as np
+from timeit import default_timer as timer
 from img_align.optimizers import Optimizer
 from img_align.cost_functions import CostFunL2Images
+
 
 class OptimizerGaussNewton(Optimizer):
 
@@ -20,7 +22,8 @@ class OptimizerGaussNewton(Optimizer):
                  max_iter=20,
                  tol_gradient=0.001,
                  tol_params=0.00001,
-                 show_iter=False):
+                 show_iter=False,
+                 profiling=False):
 
         if not isinstance(cost_function, CostFunL2Images):
             raise ValueError('Only CostFunSquaredL2NormImages cost functions allowed!')
@@ -30,12 +33,18 @@ class OptimizerGaussNewton(Optimizer):
         self.tol_gradient = tol_gradient
         self.tol_params = tol_params
         self.show_iter = show_iter
+        self.profiling = profiling
+        self.profiling_info = dict()
 
         # The 0 index is the first iteration costs and
         #  the len(iterations_costs)-1 is the
         #  last iteration cost. Every time
-        self.iter_costs = []
+        self.profiling_info['iter_costs'] = []
+        self.profiling_info['iter_time'] = []
+        self.profiling_info['iter_gradient_norm'] = []
 
+    def getProfilingInfo(self):
+        return self.profiling_info
 
     def solve(self, frame, former_params):
         k = 0
@@ -53,6 +62,9 @@ class OptimizerGaussNewton(Optimizer):
         current_params = np.copy(former_params)
 
         while not found and (k < self.max_iter):
+            # Start timer per iteration:
+            start = timer()
+
             k += 1
 
             # compute residuals to minimize for new motion parameters
@@ -76,7 +88,7 @@ class OptimizerGaussNewton(Optimizer):
             # Compute gradient instantiated in current x
             residual = self.cost_function.computeResiduals(frame, new_params)
             J = self.cost_function.computeJacobian(new_params)
-            gradient = np.dot(J.T, residual) # residual.T column vector
+            gradient = np.dot(J.T, residual)  # residual.T column vector
             gradient_norm = np.linalg.norm(gradient)
 
             cost = self.cost_function.computeValue(residuals, new_params, delta, frame)
@@ -92,6 +104,15 @@ class OptimizerGaussNewton(Optimizer):
                      print "STOP. Norm of the gradient is bellow threshold."
 
             current_params = np.copy(new_params)
+
+            # End timer per iteration:
+            end = timer()
+            iter_time = (end - start)
+
+            if self.profiling:
+                self.profiling_info['iter_costs'].append(cost)
+                self.profiling_info['iter_time'].append(iter_time)
+                self.profiling_info['iter_gradient_norm'].append(gradient_norm)
 
         if (k > self.max_iter) and self.show_iter:
             print "STOP. Max number of iterations exceeded: ", self.max_iter, "\n"
