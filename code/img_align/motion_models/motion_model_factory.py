@@ -10,7 +10,7 @@
 # http://www.dia.fi.upm.es/~pcr
 
 import abc
-import img_align.motion_models
+from img_align.motion_models import MotionHomography8P
 
 
 class MotionModelFactory:
@@ -40,6 +40,6 @@ class MotionModelFactory:
             return ValueError('motion_model_name param is empty')
 
         if motion_model_name == 'Homography8P':
-            return MotionModelHomography8P()
+            return MotionHomography8P()
 
         return ValueError('motion_model_name value {} is not recognized'.format(motion_model_name))

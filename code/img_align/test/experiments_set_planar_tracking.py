@@ -13,9 +13,10 @@ import img_align.object_models
 import img_align.motion_models
 import img_align.cost_functions
 import img_align.optimizers
-from img_align.test import TrackingExperiment
+from img_align.test import ExperimentPlanarTracking
 
-class TrackingExperimentsSet:
+
+class ExperimentsSetPlanarTracking:
 
     def __init__(self):
 
@@ -24,7 +25,6 @@ class TrackingExperimentsSet:
 
     def add(self, track_exp):
         '''
-
         :param track_exp: TrackingExperiment
         '''
 
@@ -38,11 +38,26 @@ class TrackingExperimentsSet:
         for exp in self.__tracking_experiments:
             exp.run()
 
-        return
-
-    def evaluateResults(self, gt_dir, results_dir, evaluation_dir):
+    def evaluateResults(self, exp_path):
         '''
-        Compare the results of different algorithms
+        Compare the results of different planar tracking algorithms
         '''
 
-        return
+        for exp in self.__tracking_experiments:
+            exp.sequence.open()
+            exp.sequence_results.open()
+
+            while exp.sequence.nextFrame():
+                frame, gt_corners, frame_name = exp.sequence.getCurrentFrame()
+
+                # Get a FrameTrials object (name of image and results from different trials).
+                frame_trials = exp.sequence_results.getFrameTrials(frame_name)
+
+                # TODO: plot figures about results comparing with Ground truth values.
+                # That is comparing gt_corners with frame_trials.corners[i]
+
+
+
+
+
+

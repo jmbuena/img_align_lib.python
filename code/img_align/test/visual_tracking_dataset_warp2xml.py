@@ -7,9 +7,8 @@ import sys
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
-#from xml.etree.ElementTree import Element, SubElement
-
 from xml.dom import minidom
+
 
 class GroundTruthConstants:
 
@@ -92,6 +91,7 @@ class GroundTruthConstants:
         # Distortion coefficients k1, k2, p1, p2, k3
         self.distort_coeffs = np.array([-0.0225415, -0.259618, 0.00320736, -0.000551689, 0.000000000])
 
+
 def convert_warp_data_to_frame(warp_text_row, gt_constants):
 
     row_list = warp_text_row[0].split()
@@ -147,6 +147,7 @@ def plot_frame_and_data(frame, corners, gt_constants):
     cv2.imshow('Video', frame_copy)
     cv2.waitKey(20)
 
+
 def undistort_frame(frame, gt_constants):
     undistorted = cv2.undistort(frame, gt_constants.K, gt_constants.distort_coeffs)
 
@@ -175,6 +176,7 @@ def write_xml_to_file(xml_element, file_name):
     fid = open(file_name, 'w')
     fid.write(xml_string_pretty)
     fid.close()
+
 
 def generate_sequence_ground_truth_xml(video_file, warps_file, imgs_save_path, xml_sequence_file):
 
