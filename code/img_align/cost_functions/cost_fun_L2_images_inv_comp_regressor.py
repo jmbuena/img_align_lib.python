@@ -11,9 +11,7 @@
 
 import abc
 import numpy as np
-import math
 import cv2
-import matplotlib.pyplot as plt
 from img_align.cost_functions import CostFunL2ImagesInvComp
 
 
@@ -242,12 +240,6 @@ class CostFunL2ImagesInvCompRegressor(CostFunL2ImagesInvComp):
         template_reference_coords = self.object_model.getReferenceCoords()
 
         # Matrix with the motion params of the generated samples by columns: p x num_samples (p is motion parameters)
-        # Y, ref2img_params = self.__generateDeltaParams(template_reference_coords, template_coords, template_image,
-        #                                                self.num_samples, self.object_model, self.motion_model)
-        # Y, homography_ref2img = self.__generateDeltaParams(template_reference_coords, template_coords, template_image,
-        #                                                self.num_samples, self.object_model, self.motion_model)
-        # ref2img_params = np.copy(np.reshape(homography_ref2img, (9, 1)))
-        # ref2img_params = ref2img_params[0:8, :]
         if self.shake_corners:
             Y, ref2img_params = self.__generateDeltaParamsCorners(template_reference_coords, template_coords, template_image,
                                                                   self.num_samples, self.object_model, self.motion_model)

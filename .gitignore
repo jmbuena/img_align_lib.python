@@ -1,0 +1,11 @@
+
+\.idea/
+
+code/build/
+
+code/dist/
+
+code/img_align_lib\.egg-info/
+
+*.pyc
+code/img_align/test/resources/
