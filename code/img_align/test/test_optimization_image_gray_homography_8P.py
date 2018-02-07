@@ -151,8 +151,8 @@ class TestMotionInvCompImageGrayHomography8P(unittest.TestCase):
         #while True:
         for i in range(300):
             # Capture frame-by-frame
-            # ret, frame = video_capture.read()
-            frame = cv2.imread('resources/00000002.jpg')
+            ret, frame = video_capture.read()
+            # frame = cv2.imread('resources/00000002.jpg')
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             params = optimizer.solve(gray, params)
